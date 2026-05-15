@@ -1,29 +1,22 @@
-[pipeline]
-use_object_segmentation = false
-num_burst_frames = 5
-burst_duration_ms = 250
-num_generation_candidates = 4
-candidate_confidence_threshold = 0.7
+[phase1_mask]
+mode = "precomputed"
+precomputed_mask_path = "testcase/coffeecup_hand_mask.png"
+text_prompt = "hand. coffee cup."
+box_threshold = 0.25
+text_threshold = 0.25
 
-[stability]
-min_lollipop_iou = 0.75
-max_blur_score = 400.0
+[phase3_inpaint]
+model_id = "diffusers/stable-diffusion-xl-1.0-inpainting-0.1"
+prompt = "background preserved, object preserved, realistic completion behind removed hand, no human hand visible"
+guidance_scale = 8.0
+strength = 0.99
+num_inference_steps = 30
+pad_ratio = 0.25
 
-[roi]
-forward_scale = 1.4
-side_scale = 1.0
-min_size_px = 128
-
-[retarget]
-default_force_level = 0.35
-default_closure_speed = 0.4
-min_aperture = 0.1
-max_aperture = 1.0
-
-[models]
-prosthesis_segmentor = "stub"
-clean_inpainter = "stub"
-grasp_generator = "stub"
-hand_prior_extractor = "stub"
-hand_executor = "stub"
-
+[phase4_flux_fill]
+mode = "local"
+model_id = "black-forest-labs/FLUX.1-Fill-dev"
+prompt = "A highly realistic background behind the object, no human hand, seamless continuation of the surface, extremely detailed, 8k"
+guidance_scale = 30.0
+num_inference_steps = 50
+pad_ratio = 0.25

@@ -20,28 +20,21 @@ class SensorFrame:
 
 
 @dataclass
-class Burst:
-    frames: list[SensorFrame]
+class Phase1MaskResult:
+    mask: Array
+    metadata: dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass
-class IntentSpec:
-    raw_text: str
-    target: str = "unknown"
-    task: str = "pick_up"
-    grasp_part: str = "unspecified"
-    constraints: list[str] = field(default_factory=list)
-
-
-@dataclass
-class ProsthesisMaskState:
-    fine_mask: Array
+class Phase2LollipopResult:
     lollipop_mask: Array
     lolli_params: tuple[float, float, float, float, float]
+    wrist_point: tuple[float, float]
+    tip_point: tuple[float, float]
 
 
 @dataclass
-class InteractionROI:
+class ROIBox:
     x0: int
     y0: int
     x1: int
@@ -49,69 +42,44 @@ class InteractionROI:
 
 
 @dataclass
-class SceneLite:
-    frame: SensorFrame
-    prosthesis: ProsthesisMaskState
-    interaction_roi: InteractionROI
-    object_mask: Array | None
-    intent: IntentSpec
-
-
-@dataclass
-class GeneratedCandidate:
-    image: Array
+class Phase3InpaintResult:
+    roi_box: ROIBox
+    rgb_crop: Array
+    mask_crop: Array
+    inpaint_crop: Array
+    inpaint_full: Array
     prompt: str
-    seed: int
-    score: float = 0.0
-    metadata: dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass
-class HumanPrior2D:
-    anchor_uv: tuple[int, int]
-    approach_theta: float
-    human_lolli: tuple[float, float, float, float, float]
-    contact_patch: Array
-    hand_span_px: float
-    object_width_px: float | None
-    grasp_family_hint: str
-    confidence: float
+class Phase4FluxFillResult:
+    roi_box: ROIBox
+    flux_crop: Array
+    flux_full: Array
+    prompt: str
 
 
 @dataclass
-class ProstheticAction:
-    grasp_type: str
-    thumb_mode: str
-    wrist_rotation: float
-    aperture: float
-    closure_speed: float
-    force_level: float
-    confidence: float
-
-
-@dataclass
-class ExecutionResult:
+class PhasePlaceholderResult:
     status: str
     message: str
-    telemetry: dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass
 class PipelineResult:
     status: str
-    scene: SceneLite | None = None
-    candidates: list[GeneratedCandidate] = field(default_factory=list)
-    prior: HumanPrior2D | None = None
-    action: ProstheticAction | None = None
-    execution: ExecutionResult | None = None
+    frame: SensorFrame | None = None
+    phase1_mask: Phase1MaskResult | None = None
+    phase2_lollipop: Phase2LollipopResult | None = None
+    phase3_inpaint: Phase3InpaintResult | None = None
+    phase4_flux_fill: Phase4FluxFillResult | None = None
+    phase5_mano: PhasePlaceholderResult | None = None
+    phase6_prosthetic_action: PhasePlaceholderResult | None = None
 
     def to_json_dict(self) -> dict[str, Any]:
         def convert(value: Any) -> Any:
             if isinstance(value, np.ndarray):
-                return {
-                    "shape": list(value.shape),
-                    "dtype": str(value.dtype),
-                }
+                return {"shape": list(value.shape), "dtype": str(value.dtype)}
             if isinstance(value, Path):
                 return str(value)
             if hasattr(value, "__dataclass_fields__"):
@@ -123,4 +91,3 @@ class PipelineResult:
             return value
 
         return convert(self)
-

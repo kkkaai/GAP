@@ -1,0 +1,22 @@
+# GAP notebook Step 3-4 dependencies
+# Use this from the GAP repo root.
+#
+# Recommended install flow:
+#   1) install torch/torchvision separately to match local CUDA
+#   2) pip install -e .[flux-stage]
+#
+# This file mirrors the packages actually used in the notebook's
+# inpaint + FLUX Fill stages. We intentionally do not pin exact
+# versions here because the notebook upgrades diffusers/transformers
+# before loading FLUX Fill.
+
+matplotlib>=3.8
+opencv-python>=4.9
+scipy>=1.11
+python-dotenv>=1.0
+diffusers
+transformers
+accelerate
+peft
+huggingface_hub
+safetensors

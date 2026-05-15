@@ -12,9 +12,22 @@ dependencies = [
   "Pillow>=10.0",
 ]
 
+[project.optional-dependencies]
+flux-stage = [
+  "matplotlib>=3.8",
+  "opencv-python>=4.9",
+  "scipy>=1.11",
+  "python-dotenv>=1.0",
+  "diffusers",
+  "transformers",
+  "accelerate",
+  "peft",
+  "huggingface_hub",
+  "safetensors",
+]
+
 [tool.setuptools]
 package-dir = {"" = "src"}
 
 [tool.setuptools.packages.find]
 where = ["src"]
-

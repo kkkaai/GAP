@@ -1,6 +1,7 @@
 ref/
-prosthetic_grasp_generation_plan.md
-prosthetic_grasp_generation_plan_zh.md
+external/
+markdown/prosthetic_grasp_generation_plan.md
+markdown/prosthetic_grasp_generation_plan_zh.md
 
 __pycache__/
 *.pyc
@@ -13,6 +14,9 @@ __pycache__/
 
 .venv/
 venv/
+.env
+.env.*
+!.env.example
 
 outputs/
 dist/
