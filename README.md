@@ -40,22 +40,18 @@ pip install -e .[all]
 pip install -v -e third-party/ViTPose
 ```
 
+Official repository:
+
+- [HaMeR](https://github.com/geopavlakos/hamer)
+
 ## 5. Download HaMeR Assets
 
 From the `hamer` repository root:
 
 ```bash
 bash fetch_demo_data.sh
-```
-
-Then place:
-
-```text
-MANO_RIGHT.pkl
-```
-
-under:
-
-```text
-hamer/_DATA/data/mano/MANO_RIGHT.pkl
+wget https://github.com/JonathanLehner/Colab-collection/releases/download/MANO/mano_v1_2.zip
+unzip mano_v1_2.zip
+mv mano_v1_2/models/MANO_RIGHT.pkl _DATA/data/mano/
+rm -r mano_v1_2
 ```

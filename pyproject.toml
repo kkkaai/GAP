@@ -18,6 +18,7 @@ flux-stage = [
   "opencv-python>=4.9",
   "scipy>=1.11",
   "python-dotenv>=1.0",
+  "requests>=2.31",
   "diffusers",
   "transformers",
   "accelerate",

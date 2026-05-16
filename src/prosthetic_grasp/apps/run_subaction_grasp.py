@@ -15,12 +15,32 @@ def build_argparser() -> argparse.ArgumentParser:
     parser.add_argument("--depth", default=None, help="Optional path to the depth image.")
     parser.add_argument("--config", default="config/default.toml", help="Path to the TOML config file.")
     parser.add_argument("--output-dir", default="outputs/run", help="Directory for artifacts.")
+    parser.add_argument("--phase3-mode", default=None, help="Override phase3_erase.mode")
+    parser.add_argument("--phase3-model-name", default=None, help="Override phase3_erase.model_name")
+    parser.add_argument("--phase3-model-id", default=None, help="Override phase3_erase.model_id")
+    parser.add_argument("--phase4-mode", default=None, help="Override phase4_inpaint.mode")
+    parser.add_argument("--phase4-model-name", default=None, help="Override phase4_inpaint.model_name")
+    parser.add_argument("--phase4-model-id", default=None, help="Override phase4_inpaint.model_id")
     return parser
 
 
 def main() -> None:
     args = build_argparser().parse_args()
     settings = load_settings(args.config)
+    settings.setdefault("phase3_erase", {})
+    settings.setdefault("phase4_inpaint", {})
+    if args.phase3_mode is not None:
+        settings["phase3_erase"]["mode"] = args.phase3_mode
+    if args.phase3_model_name is not None:
+        settings["phase3_erase"]["model_name"] = args.phase3_model_name
+    if args.phase3_model_id is not None:
+        settings["phase3_erase"]["model_id"] = args.phase3_model_id
+    if args.phase4_mode is not None:
+        settings["phase4_inpaint"]["mode"] = args.phase4_mode
+    if args.phase4_model_name is not None:
+        settings["phase4_inpaint"]["model_name"] = args.phase4_model_name
+    if args.phase4_model_id is not None:
+        settings["phase4_inpaint"]["model_id"] = args.phase4_model_id
     rgb = load_image(args.rgb)
     depth = load_depth(args.depth) if args.depth else None
     frame = SensorFrame(rgb=rgb, depth=depth, rgb_path=args.rgb, depth_path=args.depth)
@@ -36,12 +56,12 @@ def main() -> None:
         save_mask(output_dir / "phase1_mask.png", result.phase1_mask.mask)
     if result.phase2_lollipop is not None:
         save_mask(output_dir / "phase2_lollipop.png", result.phase2_lollipop.lollipop_mask)
-    if result.phase3_inpaint is not None:
-        save_image(output_dir / "phase3_inpaint_crop.png", result.phase3_inpaint.inpaint_crop)
-        save_image(output_dir / "phase3_inpaint_full.png", result.phase3_inpaint.inpaint_full)
-    if result.phase4_flux_fill is not None:
-        save_image(output_dir / "phase4_flux_fill_crop.png", result.phase4_flux_fill.flux_crop)
-        save_image(output_dir / "phase4_flux_fill_full.png", result.phase4_flux_fill.flux_full)
+    if result.phase3_erase is not None:
+        save_image(output_dir / "phase3_erase_crop.png", result.phase3_erase.erased_crop)
+        save_image(output_dir / "phase3_erase_full.png", result.phase3_erase.erased_full)
+    if result.phase4_inpaint is not None:
+        save_image(output_dir / "phase4_inpaint_crop.png", result.phase4_inpaint.inpaint_crop)
+        save_image(output_dir / "phase4_inpaint_full.png", result.phase4_inpaint.inpaint_full)
 
     print(f"Pipeline status: {result.status}")
     print(f"Artifacts saved to: {output_dir}")

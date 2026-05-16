@@ -1,2 +1,0 @@
-"""Grasp-prior extraction modules."""
-

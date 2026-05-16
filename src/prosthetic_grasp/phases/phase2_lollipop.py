@@ -2,8 +2,8 @@ from __future__ import annotations
 
 import math
 
-import cv2
 import numpy as np
+from PIL import Image, ImageDraw
 
 from prosthetic_grasp.common.types import Phase2LollipopResult
 
@@ -77,9 +77,12 @@ def _intersect_ray_with_image_border(origin, direction, h, w):
 def _render_lollipop(mask_shape, params, p_wrist):
     h, w = mask_shape
     x, y, a, b1, b2 = params
-    canvas = np.zeros((h, w), dtype=np.float32)
+    canvas_image = Image.new("L", (w, h), 0)
+    draw = ImageDraw.Draw(canvas_image)
     palm_radius = int(round(1.25 * a))
-    cv2.circle(canvas, (int(round(x)), int(round(y))), palm_radius, 1.0, -1)
+    cx = int(round(x))
+    cy = int(round(y))
+    draw.ellipse((cx - palm_radius, cy - palm_radius, cx + palm_radius, cy + palm_radius), fill=255)
 
     wrist_dir = np.array(p_wrist, dtype=np.float32) - np.array([x, y], dtype=np.float32)
     norm = np.linalg.norm(wrist_dir)
@@ -97,8 +100,8 @@ def _render_lollipop(mask_shape, params, p_wrist):
     p3 = p_end - orth * strip_half_width
     p4 = p_end + orth * strip_half_width
     poly = np.round(np.stack([p1, p2, p3, p4], axis=0)).astype(np.int32)
-    cv2.fillConvexPoly(canvas, poly, 1.0)
-    return canvas > 0.5
+    draw.polygon([tuple(point) for point in poly], fill=255)
+    return np.array(canvas_image) > 127
 
 
 class Phase2Lollipop:

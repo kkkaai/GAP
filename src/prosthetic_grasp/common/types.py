@@ -42,20 +42,24 @@ class ROIBox:
 
 
 @dataclass
-class Phase3InpaintResult:
+class Phase3EraseResult:
     roi_box: ROIBox
     rgb_crop: Array
     mask_crop: Array
-    inpaint_crop: Array
-    inpaint_full: Array
+    erased_crop: Array
+    erased_full: Array
+    mode: str
+    model_name: str
     prompt: str
 
 
 @dataclass
-class Phase4FluxFillResult:
+class Phase4InpaintResult:
     roi_box: ROIBox
-    flux_crop: Array
-    flux_full: Array
+    inpaint_crop: Array
+    inpaint_full: Array
+    mode: str
+    model_name: str
     prompt: str
 
 
@@ -71,8 +75,8 @@ class PipelineResult:
     frame: SensorFrame | None = None
     phase1_mask: Phase1MaskResult | None = None
     phase2_lollipop: Phase2LollipopResult | None = None
-    phase3_inpaint: Phase3InpaintResult | None = None
-    phase4_flux_fill: Phase4FluxFillResult | None = None
+    phase3_erase: Phase3EraseResult | None = None
+    phase4_inpaint: Phase4InpaintResult | None = None
     phase5_mano: PhasePlaceholderResult | None = None
     phase6_prosthetic_action: PhasePlaceholderResult | None = None
 

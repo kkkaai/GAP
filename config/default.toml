@@ -5,18 +5,22 @@ text_prompt = "hand. coffee cup."
 box_threshold = 0.25
 text_threshold = 0.25
 
-[phase3_inpaint]
-model_id = "diffusers/stable-diffusion-xl-1.0-inpainting-0.1"
-prompt = "background preserved, object preserved, realistic completion behind removed hand, no human hand visible"
-guidance_scale = 8.0
-strength = 0.99
-num_inference_steps = 30
-pad_ratio = 0.25
-
-[phase4_flux_fill]
-mode = "local"
-model_id = "black-forest-labs/FLUX.1-Fill-dev"
-prompt = "A highly realistic background behind the object, no human hand, seamless continuation of the surface, extremely detailed, 8k"
+[phase3_erase]
+mode = "api"
+model_name = "stable-diffusion-3.5-large-turbo"
+model_id = "stable-diffusion-xl-1024-v1-0"
+prompt = "Remove the current hand or prosthetic hand from the masked region and complete the hidden background and object appearance naturally. Do not add any human hand. Preserve scene layout, object identity, and content outside the masked region."
 guidance_scale = 30.0
 num_inference_steps = 50
 pad_ratio = 0.25
+preserve_unmasked_pixels = true
+
+[phase4_inpaint]
+mode = "api"
+model_name = "stable-diffusion-3.5-large-turbo"
+model_id = "stable-diffusion-xl-1024-v1-0"
+prompt = "Generate a realistic healthy adult right hand in first-person view, naturally interacting with the target object inside the masked region. Preserve the object identity and scene layout. Avoid extra fingers, deformed anatomy, and changes outside the masked region."
+guidance_scale = 30.0
+num_inference_steps = 50
+pad_ratio = 0.25
+preserve_unmasked_pixels = true
