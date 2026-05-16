@@ -26,6 +26,9 @@ flux-stage = [
   "huggingface_hub",
   "safetensors",
 ]
+camera = [
+  "pyrealsense2",
+]
 
 [tool.setuptools]
 package-dir = {"" = "src"}
