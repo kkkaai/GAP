@@ -1,0 +1,244 @@
+<mujoco model="folding">
+    <compiler angle="radian" meshdir="meshes" autolimits="true"/>
+
+    <default>
+        <default class="joint_default">
+            <joint damping="1" limited="true" armature="0.0002" frictionloss="0.01"/>
+            <geom solimp="0.9 0.95 0.001" solref="0.01 0.1"/>
+        </default>
+
+        <default class="th_base">
+            <joint range="0 1"/>
+            <position ctrlrange="0 1" forcerange="-5 5"/>
+        </default>
+        <default class="th">
+            <joint range="0 1"/>
+            <position ctrlrange="0 1" forcerange="-5 5"/>
+        </default>
+        <default class="ff_base">
+            <joint range="0 1"/>
+            <position ctrlrange="0 1" forcerange="-5 5"/>
+        </default>
+        <default class="ff">
+            <joint range="0 3.1415926"/>
+            <position ctrlrange="0 3.1415926" forcerange="-5 5"/>
+        </default>
+        <default class="mf">
+            <joint range="0 3.1415926"/>
+            <position ctrlrange="0 3.1415926" forcerange="-5 5"/>
+        </default>
+        <default class="rf_base">
+            <joint range="0 1"/>
+            <position ctrlrange="0 1" forcerange="-5 5"/>
+        </default>
+        <default class="rf">
+            <joint range="0 3.1415926"/>
+            <position ctrlrange="0 3.1415926" forcerange="-5 5"/>
+        </default>
+        <default class="lf_base">
+            <joint range="0 1"/>
+            <position ctrlrange="0 1" forcerange="-5 5"/>
+        </default>
+        <default class="lf">
+            <joint range="0 3.1415926"/>
+            <position ctrlrange="0 3.1415926" forcerange="-5 5"/>
+        </default>
+    </default>
+
+    <asset>
+        <mesh name="base_link" file="base_link.STL"/>
+        <mesh name="th_base" file="th_base.STL"/>
+        <mesh name="th_proximal" file="th_proximal.STL"/>
+        <mesh name="th_middle" file="th_middle.STL"/>
+        <mesh name="th_distal" file="th_distal.STL"/>
+        <mesh name="ff_base" file="ff_base.STL"/>
+        <mesh name="ff_proximal" file="ff_proximal.STL"/>
+        <mesh name="ff_distal" file="ff_distal.STL"/>
+        <mesh name="mf_base" file="mf_base.STL"/>
+        <mesh name="mf_proximal" file="mf_proximal.STL"/>
+        <mesh name="mf_distal" file="mf_distal.STL"/>
+        <mesh name="rf_base" file="rf_base.STL"/>
+        <mesh name="rf_proximal" file="rf_proximal.STL"/>
+        <mesh name="rf_distal" file="rf_distal.STL"/>
+        <mesh name="lf_base" file="lf_base.STL"/>
+        <mesh name="lf_proximal" file="lf_proximal.STL"/>
+        <mesh name="lf_distal" file="lf_distal.STL"/>
+    </asset>
+
+    <worldbody>
+        <body name="base_link" pos="0 0 0">
+            <geom type="mesh" rgba="0.79216 0.81961 0.93333 1" mesh="base_link"/>
+            <body name="th_base" pos="-0.0080512 -0.067822 0.020582" quat="0.707105 0.707108 0 0">
+                <inertial pos="-0.014284 0.010211 -0.0041" quat="0.586646 0.386826 0.138378 0.697899" mass="0.0085863"
+                          diaginertia="6.55258e-07 4.40944e-07 4.28258e-07"/>
+                <joint name="th_base" pos="0 0 0" axis="0 0 1" range="0 1.5708" class="joint_default"/>
+                <geom type="mesh" rgba="0.79216 0.81961 0.93333 1" mesh="th_base"/>
+                <body name="th_proximal" pos="-0.013472 0.0081269 0.021762" quat="0.719751 0.023503 0.693465 0.0226445">
+                    <inertial pos="-0.018515 0.017432 0.001018" quat="0.352751 0.611373 -0.355254 0.612849"
+                              mass="0.0078933"
+                              diaginertia="1.7828e-06 1.70832e-06 4.66333e-07"/>
+                    <joint name="th_pip" pos="0 0 0" axis="0 0 -1" range="0 1.22173" class="joint_default"/>
+                    <geom type="mesh" rgba="0.79216 0.81961 0.93333 1" mesh="th_proximal"/>
+                    <body name="th_middle" pos="-0.030114 0.041209 0">
+                        <inertial pos="-0.010678 0.012634 0.00099999" quat="0.69727 0.697265 0.117551 0.117552"
+                                  mass="0.004061" diaginertia="4.93938e-07 4.9383e-07 1.72722e-07"/>
+                        <joint name="th_mip" pos="0 0 0" axis="0 0 -1" range="0 3.1415926" class="joint_default"/>
+                        <geom type="mesh" rgba="0.79216 0.81961 0.93333 1" mesh="th_middle"/>
+                        <body name="th_distal" pos="-0.01502 0.031613 0">
+                            <inertial pos="-0.00785224 0.00960272 0.000809226" quat="0.28747 0.646044 -0.28748 0.646021"
+                                      mass="0.00281885" diaginertia="1.90128e-07 1.8927e-07 6.62716e-08"/>
+                            <joint name="th_dip" pos="0 0 0" axis="0 0 -1" range="0 3.1415926" class="joint_default"/>
+                            <geom type="mesh" rgba="0.792157 0.819608 0.933333 1" mesh="th_distal"/>
+                        </body>
+                    </body>
+                </body>
+            </body>
+            <body name="ff_base" pos="-0.0080512 -0.072222 0.020582" quat="0.707105 0.707108 0 0">
+                <inertial pos="-0.015872 0.051523 -0.0025977" quat="0.423803 0.576776 -0.432904 0.54801"
+                          mass="0.0079924"
+                          diaginertia="7.01144e-07 6.54809e-07 2.02217e-07"/>
+                <joint name="ff_base" pos="0 0 0" axis="0 0 1" range="0 1.5708" class="joint_default"/>
+                <geom type="mesh" rgba="0.79216 0.81961 0.93333 1" mesh="ff_base"/>
+                <body name="ff_proximal" pos="-0.0184 0.07655 -0.0025"
+                      quat="-0.707105 -2.59734e-06 0.707108 -2.59735e-06">
+                    <inertial pos="-0.0042227 0.012982 -0.0012" quat="0.70605 0.706044 -0.0387019 -0.0387022"
+                              mass="0.004061" diaginertia="4.93938e-07 4.9383e-07 1.72722e-07"/>
+                    <joint name="ff_pip" pos="0 0 0" axis="0 0 -1" range="0 3.1415926" class="joint_default"/>
+                    <geom type="mesh" rgba="0.79216 0.81961 0.93333 1" mesh="ff_proximal"/>
+                    <body name="ff_distal" pos="0 0.031987 0">
+                        <inertial pos="-0.0022373 0.017837 -0.0010006" quat="0.7056 0.705687 0.0452708 0.0456548"
+                                  mass="0.0040496" diaginertia="6.32385e-07 6.2664e-07 8.18567e-08"/>
+                        <joint name="ff_dip" pos="0 0 0" axis="0 0 -1" range="0 3.1415926" class="joint_default"/>
+                        <geom type="mesh" rgba="0.79216 0.81961 0.93333 1" mesh="ff_distal"/>
+                    </body>
+                </body>
+            </body>
+            <body name="mf_base" pos="-0.0080512 -0.076622 0.020582" quat="0.707105 0.707108 0 0">
+                <geom type="mesh" rgba="0.792157 0.819608 0.933333 1" mesh="mf_base"/>
+            </body>
+            <body name="mf_proximal" pos="-0.0093512 -0.0697223 0.097132" quat="-0.500002 -0.5 0.499996 0.500002">
+                <inertial pos="-0.0042227 0.015994 -0.0011" quat="0.70605 0.706044 -0.0387019 -0.0387022"
+                          mass="0.004061"
+                          diaginertia="4.93938e-07 4.9383e-07 1.72722e-07"/>
+                <joint name="mf_pip" pos="0 0 0" axis="0 0 -1" range="0 3.1415926" class="joint_default"/>
+                <geom type="mesh" rgba="0.79216 0.81961 0.93333 1" mesh="mf_proximal"/>
+                <body name="mf_distal" pos="0 0.035 0">
+                    <inertial pos="-0.00217716 0.0216169 -0.000905776" quat="0.706583 0.706642 0.025943 0.0269177"
+                              mass="0.00502243" diaginertia="9.65115e-07 9.59144e-07 1.01844e-07"/>
+                    <joint name="mf_dip" pos="0 0 0" axis="0 0 -1" range="0 3.1415926" class="joint_default"/>
+                    <geom type="mesh" rgba="0.792157 0.819608 0.933333 1" mesh="mf_distal"/>
+                </body>
+            </body>
+            <body name="rf_base" pos="-0.0080512 -0.081022 0.020582" quat="0.707105 0.707108 0 0">
+                <inertial pos="0.0160603 0.051546 -0.0105687" quat="0.614177 0.43886 -0.506735 0.416423"
+                          mass="0.00800098"
+                          diaginertia="7.01283e-07 6.6025e-07 2.05312e-07"/>
+                <joint name="rf_base" pos="0 0 0" axis="0 0 -1" range="0 1.5708" class="joint_default"/>
+                <geom type="mesh" rgba="0.792157 0.819608 0.933333 1" mesh="rf_base"/>
+                <body name="rf_proximal" pos="0.0159 0.07655 -0.0113"
+                      quat="-0.707105 -2.59734e-06 0.707108 -2.59735e-06">
+                    <inertial pos="-0.00422267 0.0159942 -0.000900013" quat="0.70605 0.706044 -0.0387012 -0.0387015"
+                              mass="0.00406101" diaginertia="4.93941e-07 4.93832e-07 1.72719e-07"/>
+                    <joint name="rf_pip" pos="0 0 0" axis="0 0 -1" range="0 3.1415926" class="joint_default"/>
+                    <geom type="mesh" rgba="0.792157 0.819608 0.933333 1" mesh="rf_proximal"/>
+                    <body name="rf_distal" pos="0 0.035 0">
+                        <inertial pos="-0.002272 0.018499 -0.00069525" quat="0.706592 0.70669 0.0245427 0.0267511"
+                                  mass="0.0049934" diaginertia="7.54587e-07 7.5205e-07 1.00553e-07"/>
+                        <joint name="rf_dip" pos="0 0 0" axis="0 0 -1" range="0 3.1415926" class="joint_default"/>
+                        <geom type="mesh" rgba="0.79216 0.81961 0.93333 1" mesh="rf_distal"/>
+                    </body>
+                </body>
+            </body>
+            <body name="lf_base" pos="-0.0080512 -0.085422 0.020582" quat="0.707105 0.707108 0 0">
+                <inertial pos="0 0 0" quat="0.5 0.5 0.5 0.5" mass="0.004061" diaginertia="8.44e-07 8.44e-07 1.35e-07"/>
+                <joint name="lf_base" pos="0 0 0" axis="0 0 -1" range="0 1.5708" class="joint_default"/>
+                <geom type="mesh" rgba="0.792157 0.819608 0.933333 1" mesh="lf_base"/>
+                <body name="lf_proximal" pos="0.0332 0.07655 -0.0157"
+                      quat="-0.707105 -2.59734e-06 0.707108 -2.59735e-06">
+                    <inertial pos="-0.0042227 0.015994 -0.0010524" quat="0.70605 0.706044 -0.0387019 -0.0387022"
+                              mass="0.004061" diaginertia="4.93938e-07 4.9383e-07 1.72722e-07"/>
+                    <joint name="lf_pip" pos="0 0 0" axis="0 0 -1" range="0 3.1415926" class="joint_default"/>
+                    <geom type="mesh" rgba="0.79216 0.81961 0.93333 1" mesh="lf_proximal"/>
+                    <body name="lf_distal" pos="0 0.035 0">
+                        <inertial pos="-0.0021067 0.014352 -0.0010016" quat="0.70494 0.704914 0.05435 0.0565776"
+                                  mass="0.0032335" diaginertia="3.28397e-07 3.2262e-07 6.44185e-08"/>
+                        <joint name="lf_dip" pos="0 0 0" axis="0 0 -1" range="0 3.1415926" class="joint_default"/>
+                        <geom type="mesh" rgba="0.79216 0.81961 0.93333 1" mesh="lf_distal"/>
+                    </body>
+                </body>
+            </body>
+        </body>
+    </worldbody>
+
+    <contact>
+        <exclude body1="base_link" body2="th_base"/>
+        <exclude body1="base_link" body2="ff_base"/>
+        <exclude body1="base_link" body2="mf_base"/>
+        <exclude body1="base_link" body2="rf_base"/>
+        <exclude body1="base_link" body2="lf_base"/>
+
+        <exclude body1="base_link" body2="th_proximal"/>
+        <exclude body1="base_link" body2="ff_proximal"/>
+        <exclude body1="base_link" body2="mf_proximal"/>
+        <exclude body1="base_link" body2="rf_proximal"/>
+        <exclude body1="base_link" body2="lf_proximal"/>
+
+        <exclude body1="th_base" body2="ff_base"/>
+        <exclude body1="th_base" body2="mf_base"/>
+        <exclude body1="th_base" body2="rf_base"/>
+        <exclude body1="th_base" body2="lf_base"/>
+        <exclude body1="ff_base" body2="mf_base"/>
+        <exclude body1="ff_base" body2="rf_base"/>
+        <exclude body1="ff_base" body2="lf_base"/>
+        <exclude body1="mf_base" body2="rf_base"/>
+        <exclude body1="mf_base" body2="lf_base"/>
+        <exclude body1="rf_base" body2="lf_base"/>
+
+        <exclude body1="th_base" body2="th_proximal"/>
+        <exclude body1="ff_base" body2="ff_proximal"/>
+        <exclude body1="mf_base" body2="mf_proximal"/>
+        <exclude body1="rf_base" body2="rf_proximal"/>
+        <exclude body1="lf_base" body2="lf_proximal"/>
+    </contact>
+
+    <tendon>
+        <fixed name="th">
+            <joint joint="th_pip" coef="0.5"/>
+            <joint joint="th_mip" coef="0.8"/>
+            <joint joint="th_dip" coef="0.8"/>
+        </fixed>
+        <fixed name="ff">
+            <joint joint="ff_pip" coef="1"/>
+            <joint joint="ff_dip" coef="1"/>
+        </fixed>
+        <fixed name="mf">
+            <joint joint="mf_pip" coef="1"/>
+            <joint joint="mf_dip" coef="1"/>
+        </fixed>
+        <fixed name="rf">
+            <joint joint="rf_pip" coef="1"/>
+            <joint joint="rf_dip" coef="1"/>
+        </fixed>
+        <fixed name="lf">
+            <joint joint="lf_pip" coef="1"/>
+            <joint joint="lf_dip" coef="1"/>
+        </fixed>
+    </tendon>
+
+    <actuator>
+        <position name="th_base" joint="th_base" kp="400" class="th_base"/>
+        <position name="th" tendon="th" kp="400" class="th"/>
+
+        <position name="ff_base" joint="ff_base" kp="400" class="ff_base"/>
+        <position name="ff" tendon="ff" kp="400" class="ff"/>
+
+        <position name="mf" tendon="mf" kp="400" class="mf"/>
+
+        <position name="rf_base" joint="rf_base" kp="400" class="rf_base"/>
+        <position name="rf" tendon="rf" kp="400" class="rf"/>
+
+        <position name="lf_base" joint="lf_base" kp="400" class="lf_base"/>
+        <position name="lf" tendon="lf" kp="400" class="lf"/>
+    </actuator>
+
+</mujoco>

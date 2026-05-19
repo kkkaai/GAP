@@ -2,26 +2,29 @@ from __future__ import annotations
 
 from prosthetic_grasp.common.types import PipelineResult, SensorFrame
 from prosthetic_grasp.phases.phase1_mask import Phase1Mask, Phase1MaskConfig
-from prosthetic_grasp.phases.phase2_lollipop import Phase2Lollipop
+from prosthetic_grasp.phases.phase2_lollipop import Phase2Lollipop, Phase2LollipopConfig
 from prosthetic_grasp.phases.phase3_erase import Phase3Erase, Phase3EraseConfig
 from prosthetic_grasp.phases.phase4_inpaint import Phase4Inpaint, Phase4InpaintConfig
-from prosthetic_grasp.phases.phase5_mano import Phase5Mano
-from prosthetic_grasp.phases.phase6_prosthetic_action import Phase6ProstheticAction
+from prosthetic_grasp.phases.phase5_mano import Phase5Mano, Phase5ManoConfig
+from prosthetic_grasp.phases.phase6_prosthetic_action import Phase6ProstheticAction, Phase6ProstheticActionConfig
 
 
 class ProstheticGraspPipeline:
     def __init__(self, settings: dict) -> None:
         self.settings = settings
         phase1 = settings.get("phase1_mask", {})
+        phase2 = settings.get("phase2_lollipop", {})
         phase3 = settings.get("phase3_erase", {})
         phase4 = settings.get("phase4_inpaint", {})
+        phase5 = settings.get("phase5_mano", {})
+        phase6 = settings.get("phase6_prosthetic_action", {})
 
         self.phase1_mask = Phase1Mask(Phase1MaskConfig(**phase1))
-        self.phase2_lollipop = Phase2Lollipop()
+        self.phase2_lollipop = Phase2Lollipop(Phase2LollipopConfig(**phase2))
         self.phase3_erase = Phase3Erase(Phase3EraseConfig(**phase3))
         self.phase4_inpaint = Phase4Inpaint(Phase4InpaintConfig(**phase4))
-        self.phase5_mano = Phase5Mano()
-        self.phase6_prosthetic_action = Phase6ProstheticAction()
+        self.phase5_mano = Phase5Mano(Phase5ManoConfig(**phase5))
+        self.phase6_prosthetic_action = Phase6ProstheticAction(Phase6ProstheticActionConfig(**phase6))
 
     def run(self, frame: SensorFrame) -> PipelineResult:
         phase1_result = self.phase1_mask.run(frame.rgb)
@@ -30,8 +33,11 @@ class ProstheticGraspPipeline:
         phase4_result = self.phase4_inpaint.run(phase3_result.erased_full, phase2_result.lollipop_mask)
         phase5_result = self.phase5_mano.run(phase4_result.inpaint_full)
         phase6_result = self.phase6_prosthetic_action.run(phase5_result)
+        status = "ok"
+        if phase5_result.status != "ok" or phase6_result.status != "ok":
+            status = "partial"
         return PipelineResult(
-            status="ok",
+            status=status,
             frame=frame,
             phase1_mask=phase1_result,
             phase2_lollipop=phase2_result,

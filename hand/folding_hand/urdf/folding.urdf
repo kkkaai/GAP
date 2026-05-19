@@ -1,0 +1,975 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- This URDF was automatically created by SolidWorks to URDF Exporter! Originally created by Stephen Brawner (brawner@gmail.com) 
+     Commit Version: 1.6.0-4-g7f85cfe  Build Version: 1.6.7995.38578
+     For more information, please see http://wiki.ros.org/sw_urdf_exporter -->
+<robot
+  name="folding">
+  <link
+    name="base_link">
+    <inertial>
+      <origin
+        xyz="0.0018037 0.021438 0.06669"
+        rpy="0 0 0" />
+      <mass
+        value="0.083321" />
+      <inertia
+        ixx="2.7392E-05"
+        ixy="-1.4366E-06"
+        ixz="1.2287E-07"
+        iyy="3.0504E-05"
+        iyz="-1.3603E-07"
+        izz="3.7926E-05" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://folding/meshes/base_link.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.79216 0.81961 0.93333 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://folding/meshes/base_link.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <link
+    name="th_base">
+    <inertial>
+      <origin
+        xyz="-0.014284 0.010211 -0.0041"
+        rpy="0 0 0" />
+      <mass
+        value="0.0085863" />
+      <inertia
+        ixx="4.3472E-07"
+        ixy="-1.4241E-10"
+        ixz="-6.9073E-09"
+        iyy="6.2381E-07"
+        iyz="7.7114E-08"
+        izz="4.6593E-07" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://folding/meshes/th_base.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.79216 0.81961 0.93333 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://folding/meshes/th_base.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="th_base"
+    type="revolute">
+    <origin
+      xyz="-0.0080512 -0.067822 0.020582"
+      rpy="1.5708 0 0" />
+    <parent
+      link="base_link" />
+    <child
+      link="th_base" />
+    <axis
+      xyz="0 0 -1" />
+    <limit
+      lower="0"
+      upper="0"
+      effort="0"
+      velocity="0" />
+  </joint>
+  <link
+    name="th_proximal">
+    <inertial>
+      <origin
+        xyz="-0.018515 0.017432 0.001018"
+        rpy="0 0 0" />
+      <mass
+        value="0.0078933" />
+      <inertia
+        ixx="1.3994E-06"
+        ixy="5.3688E-07"
+        ixz="-2.8774E-10"
+        iyy="7.7525E-07"
+        iyz="-1.1373E-10"
+        izz="1.7828E-06" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://folding/meshes/th_proximal.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.79216 0.81961 0.93333 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://folding/meshes/th_proximal.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="th_pip"
+    type="revolute">
+    <origin
+      xyz="-0.013472 0.0081269 0.021762"
+      rpy="-3.0763 1.5336 3.1416" />
+    <parent
+      link="th_base" />
+    <child
+      link="th_proximal" />
+    <axis
+      xyz="0 0 1" />
+    <limit
+      lower="0"
+      upper="0"
+      effort="0"
+      velocity="0" />
+  </joint>
+  <link
+    name="th_middle">
+    <inertial>
+      <origin
+        xyz="-0.010678 0.012634 0.00099999"
+        rpy="0 0 0" />
+      <mass
+        value="0.004061" />
+      <inertia
+        ixx="4.5941E-07"
+        ixy="9.9493E-08"
+        ixz="-1.1915E-13"
+        iyy="2.0725E-07"
+        iyz="2.4166E-12"
+        izz="4.9383E-07" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://folding/meshes/th_middle.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.79216 0.81961 0.93333 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://folding/meshes/th_middle.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="th_mip"
+    type="revolute">
+    <origin
+      xyz="-0.030114 0.041209 0"
+      rpy="0 0 0" />
+    <parent
+      link="th_proximal" />
+    <child
+      link="th_middle" />
+    <axis
+      xyz="0 0 1" />
+    <limit
+      lower="0"
+      upper="0"
+      effort="0"
+      velocity="0" />
+  </joint>
+  <link
+    name="th_distal">
+    <inertial>
+      <origin
+        xyz="-0.00785224078749341 0.00960271962149489 0.00080922620031941"
+        rpy="0 0 0" />
+      <mass
+        value="0.00281885149443153" />
+      <inertia
+        ixx="1.34149367153475E-07"
+        ixy="6.11673455056129E-08"
+        ixz="2.29131628928771E-12"
+        iyy="1.21391924841255E-07"
+        iyz="-3.6897403130184E-12"
+        izz="1.90128213429424E-07" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://folding/meshes/th_distal.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.792156862745098 0.819607843137255 0.933333333333333 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://folding/meshes/th_distal.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="th_dip"
+    type="revolute">
+    <origin
+      xyz="-0.01502 0.031613 0"
+      rpy="0 0 0" />
+    <parent
+      link="th_middle" />
+    <child
+      link="th_distal" />
+    <axis
+      xyz="0 0 -1" />
+    <limit
+      lower="0"
+      upper="0"
+      effort="0"
+      velocity="0" />
+  </joint>
+  <link
+    name="ff_base">
+    <inertial>
+      <origin
+        xyz="-0.015872 0.051523 -0.0025977"
+        rpy="0 0 0" />
+      <mass
+        value="0.0079924" />
+      <inertia
+        ixx="6.23E-07"
+        ixy="1.156E-07"
+        ixz="5.9566E-09"
+        iyy="2.3484E-07"
+        iyz="-1.9121E-08"
+        izz="7.0033E-07" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://folding/meshes/ff_base.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.79216 0.81961 0.93333 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://folding/meshes/ff_base.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="ff_base"
+    type="revolute">
+    <origin
+      xyz="-0.0080512 -0.072222 0.020582"
+      rpy="1.5708 0 0" />
+    <parent
+      link="base_link" />
+    <child
+      link="ff_base" />
+    <axis
+      xyz="0 0 1" />
+    <limit
+      lower="0"
+      upper="0"
+      effort="0"
+      velocity="0" />
+  </joint>
+  <link
+    name="ff_proximal">
+    <inertial>
+      <origin
+        xyz="-0.0042227 0.012982 -0.0012"
+        rpy="0 0 0" />
+      <mass
+        value="0.004061" />
+      <inertia
+        ixx="4.901E-07"
+        ixy="-3.4899E-08"
+        ixz="1.1575E-12"
+        iyy="1.7656E-07"
+        iyz="2.3713E-12"
+        izz="4.9383E-07" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://folding/meshes/ff_proximal.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.79216 0.81961 0.93333 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://folding/meshes/ff_proximal.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="ff_pip"
+    type="revolute">
+    <origin
+      xyz="-0.0184 0.07655 -0.0025"
+      rpy="3.1416 -1.5708 0" />
+    <parent
+      link="ff_base" />
+    <child
+      link="ff_proximal" />
+    <axis
+      xyz="0 0 1" />
+    <limit
+      lower="0"
+      upper="0"
+      effort="0"
+      velocity="0" />
+  </joint>
+  <link
+    name="ff_distal">
+    <inertial>
+      <origin
+        xyz="-0.0022373 0.017837 -0.0010006"
+        rpy="0 0 0" />
+      <mass
+        value="0.0040496" />
+      <inertia
+        ixx="6.2332E-07"
+        ixy="7.0061E-08"
+        ixz="9.2542E-12"
+        iyy="9.0922E-08"
+        iyz="-4.6903E-11"
+        izz="6.2664E-07" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://folding/meshes/ff_distal.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.79216 0.81961 0.93333 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://folding/meshes/ff_distal.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="ff_dip"
+    type="revolute">
+    <origin
+      xyz="0 0.031987 0"
+      rpy="0 0 0" />
+    <parent
+      link="ff_proximal" />
+    <child
+      link="ff_distal" />
+    <axis
+      xyz="0 0 1" />
+    <limit
+      lower="0"
+      upper="0"
+      effort="0"
+      velocity="0" />
+  </joint>
+  <link
+    name="mf_base">
+    <inertial>
+      <origin
+        xyz="0.000149684239257876 0.0507417012696094 -0.00653466167513372"
+        rpy="0 0 0" />
+      <mass
+        value="0.00814534759305231" />
+      <inertia
+        ixx="8.10827069902262E-07"
+        ixy="1.86170600888022E-08"
+        ixz="1.53146095361982E-09"
+        iyy="2.00127007534791E-07"
+        iyz="1.17844359837228E-08"
+        izz="8.49680231062109E-07" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://folding/meshes/mf_base.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.792156862745098 0.819607843137255 0.933333333333333 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://folding/meshes/mf_base.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="mf_base"
+    type="fixed">
+    <origin
+      xyz="-0.0080512 -0.076622 0.020582"
+      rpy="1.5708 0 0" />
+    <parent
+      link="base_link" />
+    <child
+      link="mf_base" />
+    <axis
+      xyz="0 0 0" />
+    <limit
+      lower="0"
+      upper="0"
+      effort="0"
+      velocity="0" />
+  </joint>
+  <link
+    name="mf_proximal">
+    <inertial>
+      <origin
+        xyz="-0.0042227 0.015994 -0.0011"
+        rpy="0 0 0" />
+      <mass
+        value="0.004061" />
+      <inertia
+        ixx="4.901E-07"
+        ixy="-3.4899E-08"
+        ixz="1.1575E-12"
+        iyy="1.7656E-07"
+        iyz="2.3713E-12"
+        izz="4.9383E-07" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://folding/meshes/mf_proximal.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.79216 0.81961 0.93333 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://folding/meshes/mf_proximal.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="mf_pip"
+    type="revolute">
+    <origin
+      xyz="-0.0013 0.07655 -0.0069"
+      rpy="3.1416 -1.5708 0" />
+    <parent
+      link="mf_base" />
+    <child
+      link="mf_proximal" />
+    <axis
+      xyz="0 0 -1" />
+    <limit
+      lower="0"
+      upper="0"
+      effort="0"
+      velocity="0" />
+  </joint>
+  <link
+    name="mf_distal">
+    <inertial>
+      <origin
+        xyz="-0.00217715663925629 0.0216169098719868 -0.00090577619233897"
+        rpy="0 0 0" />
+      <mass
+        value="0.00502242897630222" />
+      <inertia
+        ixx="9.60297532986301E-07"
+        ixy="6.43096806730147E-08"
+        ixz="1.0231453747671E-11"
+        iyy="1.06662106139774E-07"
+        iyz="-2.62438383104626E-11"
+        izz="9.59144418477479E-07" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://folding/meshes/mf_distal.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.792156862745098 0.819607843137255 0.933333333333333 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://folding/meshes/mf_distal.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="mf_dip"
+    type="revolute">
+    <origin
+      xyz="0 0.035 0"
+      rpy="0 0 0" />
+    <parent
+      link="mf_proximal" />
+    <child
+      link="mf_distal" />
+    <axis
+      xyz="0 0 -1" />
+    <limit
+      lower="0"
+      upper="0"
+      effort="0"
+      velocity="0" />
+  </joint>
+  <link
+    name="rf_base">
+    <inertial>
+      <origin
+        xyz="0.016060292820874 0.0515459931696622 -0.0105687339293443"
+        rpy="0 0 0" />
+      <mass
+        value="0.0080009790260718" />
+      <inertia
+        ixx="6.31014160717713E-07"
+        ixy="-1.11965813117793E-07"
+        ixz="1.74949849610532E-08"
+        iyy="2.40193736575413E-07"
+        iyz="4.6973558471038E-08"
+        izz="6.95637456035978E-07" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://folding/meshes/rf_base.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.792156862745098 0.819607843137255 0.933333333333333 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://folding/meshes/rf_base.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="rf_base"
+    type="revolute">
+    <origin
+      xyz="-0.0080512 -0.081022 0.020582"
+      rpy="1.5708 0 0" />
+    <parent
+      link="base_link" />
+    <child
+      link="rf_base" />
+    <axis
+      xyz="0 0 -1" />
+    <limit
+      lower="0"
+      upper="0"
+      effort="0"
+      velocity="0" />
+  </joint>
+  <link
+    name="rf_proximal">
+    <inertial>
+      <origin
+        xyz="-0.00422267141734337 0.0159941674647099 -0.00090001299998956"
+        rpy="0 0 0" />
+      <mass
+        value="0.00406100599102715" />
+      <inertia
+        ixx="4.90103894486262E-07"
+        ixy="-3.48991467830243E-08"
+        ixz="1.15753053459054E-12"
+        iyy="1.76556793884969E-07"
+        iyz="2.37128952244051E-12"
+        izz="4.93831847226304E-07" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://folding/meshes/rf_proximal.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.792156862745098 0.819607843137255 0.933333333333333 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://folding/meshes/rf_proximal.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="rf_pip"
+    type="revolute">
+    <origin
+      xyz="0.0159 0.07655 -0.0113"
+      rpy="3.1416 -1.5708 0" />
+    <parent
+      link="rf_base" />
+    <child
+      link="rf_proximal" />
+    <axis
+      xyz="0 0 -1" />
+    <limit
+      lower="0"
+      upper="0"
+      effort="0"
+      velocity="0" />
+  </joint>
+  <link
+    name="rf_distal">
+    <inertial>
+      <origin
+        xyz="-0.002272 0.018499 -0.00069525"
+        rpy="0 0 0" />
+      <mass
+        value="0.0049934" />
+      <inertia
+        ixx="7.5115E-07"
+        ixy="4.7288E-08"
+        ixz="9.1047E-12"
+        iyy="1.0399E-07"
+        iyz="-1.5854E-11"
+        izz="7.5205E-07" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://folding/meshes/rf_distal.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.79216 0.81961 0.93333 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://folding/meshes/rf_distal.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="rf_dip"
+    type="revolute">
+    <origin
+      xyz="0 0.035 0"
+      rpy="0 0 0" />
+    <parent
+      link="rf_proximal" />
+    <child
+      link="rf_distal" />
+    <axis
+      xyz="0 0 -1" />
+    <limit
+      lower="0"
+      upper="0"
+      effort="0"
+      velocity="0" />
+  </joint>
+  <link
+    name="lf_base">
+    <inertial>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <mass
+        value="0.004061" />
+      <inertia
+        ixx="1.35e-7"
+        ixy="0"
+        ixz="0"
+        iyy="8.44e-7"
+        iyz="0"
+        izz="8.44e-7" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://folding/meshes/lf_base.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="1 1 1 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://folding/meshes/lf_base.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="lf_base"
+    type="revolute">
+    <origin
+      xyz="-0.0080512 -0.085422 0.020582"
+      rpy="1.5708 0 0" />
+    <parent
+      link="base_link" />
+    <child
+      link="lf_base" />
+    <axis
+      xyz="0 0 -1" />
+    <limit
+      lower="0"
+      upper="0"
+      effort="0"
+      velocity="0" />
+  </joint>
+  <link
+    name="lf_proximal">
+    <inertial>
+      <origin
+        xyz="-0.0042227 0.015994 -0.0010524"
+        rpy="0 0 0" />
+      <mass
+        value="0.004061" />
+      <inertia
+        ixx="4.901E-07"
+        ixy="-3.4899E-08"
+        ixz="1.1575E-12"
+        iyy="1.7656E-07"
+        iyz="2.3713E-12"
+        izz="4.9383E-07" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://folding/meshes/lf_proximal.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.79216 0.81961 0.93333 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://folding/meshes/lf_proximal.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="lf_pip"
+    type="revolute">
+    <origin
+      xyz="0.0332 0.07655 -0.0157"
+      rpy="3.1416 -1.5708 0" />
+    <parent
+      link="lf_base" />
+    <child
+      link="lf_proximal" />
+    <axis
+      xyz="0 0 -1" />
+    <limit
+      lower="0"
+      upper="0"
+      effort="0"
+      velocity="0" />
+  </joint>
+  <link
+    name="lf_distal">
+    <inertial>
+      <origin
+        xyz="-0.0021067 0.014352 -0.0010016"
+        rpy="0 0 0" />
+      <mass
+        value="0.0032335" />
+      <inertia
+        ixx="3.2194E-07"
+        ixy="4.0776E-08"
+        ixz="6.4317E-12"
+        iyy="7.0875E-08"
+        iyz="7.5277E-11"
+        izz="3.2262E-07" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://folding/meshes/lf_distal.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.79216 0.81961 0.93333 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://folding/meshes/lf_distal.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="lf_dip"
+    type="revolute">
+    <origin
+      xyz="0 0.035 0"
+      rpy="0 0 0" />
+    <parent
+      link="lf_proximal" />
+    <child
+      link="lf_distal" />
+    <axis
+      xyz="0 0 -1" />
+    <limit
+      lower="0"
+      upper="0"
+      effort="0"
+      velocity="0" />
+  </joint>
+</robot>

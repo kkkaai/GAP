@@ -5,7 +5,9 @@ from dataclasses import dataclass
 import numpy as np
 
 from prosthetic_grasp.common.image_editing import (
+    FLUX_FILL_MODEL_ID,
     ImageEditConfig,
+    STABILITY_ERASE_ENDPOINT,
     crop_from_mask,
     paste_crop_back,
     run_masked_image_edit,
@@ -15,9 +17,10 @@ from prosthetic_grasp.common.types import Phase3EraseResult
 
 @dataclass
 class Phase3EraseConfig(ImageEditConfig):
-    mode: str = "api"
-    model_name: str = "stable-diffusion-3.5-large-turbo"
-    model_id: str = "black-forest-labs/FLUX.1-Fill-dev"
+    mode: str = "local"
+    model_name: str = "flux-fill"
+    model_id: str = FLUX_FILL_MODEL_ID
+    stability_endpoint: str = STABILITY_ERASE_ENDPOINT
     prompt: str = (
         "Remove the current hand or prosthetic hand from the masked region and complete the hidden background "
         "and object appearance naturally. Do not add any human hand. Preserve scene layout, object identity, "
