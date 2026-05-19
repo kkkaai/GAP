@@ -31,7 +31,27 @@ If you prefer requirements directly:
 pip install -r requirements/flux-stage.txt
 ```
 
-## 4. Install HaMeR from the Official Repository
+## 4. Install SegGPT for Phase 1
+
+```bash
+pip install -e .[seggpt]
+```
+
+`phase1_mask` can use SegGPT as a few-shot segmentation backend:
+
+```toml
+[phase1_mask]
+mode = "seggpt"
+model_id = "BAAI/seggpt-vit-large"
+support_image_path = "data/support/prosthetic_hand_001.png"
+support_mask_path = "data/support/prosthetic_hand_001_mask.png"
+threshold = 0.5
+device = "auto"
+```
+
+Model weights are downloaded automatically by Hugging Face Transformers on the first run. For offline machines, pre-cache `BAAI/seggpt-vit-large` in the Hugging Face cache before running the pipeline.
+
+## 5. Install HaMeR from the Official Repository
 
 ```bash
 git clone --recursive https://github.com/geopavlakos/hamer.git
@@ -44,7 +64,7 @@ Official repository:
 
 - [HaMeR](https://github.com/geopavlakos/hamer)
 
-## 5. Download HaMeR Assets
+## 6. Download HaMeR Assets
 
 From the `hamer` repository root:
 
