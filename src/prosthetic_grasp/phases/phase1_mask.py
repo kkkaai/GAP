@@ -17,6 +17,13 @@ class Phase1MaskConfig:
     mode: str = "precomputed"
     precomputed_mask_path: str | None = None
 
+    def __post_init__(self) -> None:
+        self.mode = self.mode.strip().lower()
+        if not 0.0 <= self.box_threshold <= 1.0:
+            raise ValueError(f"box_threshold must be in [0, 1], got {self.box_threshold}.")
+        if not 0.0 <= self.text_threshold <= 1.0:
+            raise ValueError(f"text_threshold must be in [0, 1], got {self.text_threshold}.")
+
 
 class Phase1Mask:
     """Phase 1 placeholder.
@@ -40,4 +47,8 @@ class Phase1Mask:
         mask = load_image(self.config.precomputed_mask_path)
         if mask.ndim == 3:
             mask = mask[..., 0]
+        if mask.shape != image_rgb.shape[:2]:
+            raise ValueError(
+                f"Precomputed mask shape {mask.shape} does not match input RGB shape {image_rgb.shape[:2]}."
+            )
         return Phase1MaskResult(mask=mask > 127, metadata={"source": str(Path(self.config.precomputed_mask_path))})

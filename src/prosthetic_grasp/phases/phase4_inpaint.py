@@ -5,7 +5,9 @@ from dataclasses import dataclass
 import numpy as np
 
 from prosthetic_grasp.common.image_editing import (
+    FLUX_FILL_MODEL_ID,
     ImageEditConfig,
+    STABILITY_INPAINT_ENDPOINT,
     crop_from_mask,
     paste_crop_back,
     run_masked_image_edit,
@@ -15,9 +17,10 @@ from prosthetic_grasp.common.types import Phase4InpaintResult
 
 @dataclass
 class Phase4InpaintConfig(ImageEditConfig):
-    mode: str = "api"
-    model_name: str = "stable-diffusion-3.5-large-turbo"
-    model_id: str = "black-forest-labs/FLUX.1-Fill-dev"
+    mode: str = "local"
+    model_name: str = "flux-fill"
+    model_id: str = FLUX_FILL_MODEL_ID
+    stability_endpoint: str = STABILITY_INPAINT_ENDPOINT
     prompt: str = (
         "Generate a realistic healthy adult right hand in first-person view, naturally interacting with the "
         "target object inside the masked region. Preserve the object identity and scene layout. Avoid extra "
@@ -37,6 +40,8 @@ class Phase4Inpaint:
         inpaint_full = paste_crop_back(image_rgb, inpaint_crop, roi_box)
         return Phase4InpaintResult(
             roi_box=roi_box,
+            rgb_crop=rgb_crop,
+            mask_crop=mask_crop,
             inpaint_crop=inpaint_crop,
             inpaint_full=inpaint_full,
             mode=self.config.mode,

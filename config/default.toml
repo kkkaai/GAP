@@ -5,10 +5,23 @@ text_prompt = "hand. coffee cup."
 box_threshold = 0.25
 text_threshold = 0.25
 
+[phase2_lollipop]
+min_mask_points = 10
+palm_center_ratio = 0.30
+min_axis_band_px = 20.0
+axis_band_ratio = 0.12
+palm_width_std_scale = 1.8
+min_palm_half_width = 8.0
+palm_radius_scale = 1.25
+strip_half_width_scale = 0.55
+min_strip_half_width = 4.0
+
 [phase3_erase]
-mode = "api"
-model_name = "stable-diffusion-3.5-large-turbo"
-model_id = "stable-diffusion-xl-1024-v1-0"
+mode = "local"
+model_name = "flux-fill"
+model_id = "black-forest-labs/FLUX.1-Fill-dev"
+stability_endpoint = "https://api.stability.ai/v2beta/stable-image/edit/erase"
+stability_output_format = "png"
 prompt = "Remove the current hand or prosthetic hand from the masked region and complete the hidden background and object appearance naturally. Do not add any human hand. Preserve scene layout, object identity, and content outside the masked region."
 guidance_scale = 30.0
 num_inference_steps = 50
@@ -16,11 +29,35 @@ pad_ratio = 0.25
 preserve_unmasked_pixels = true
 
 [phase4_inpaint]
-mode = "api"
-model_name = "stable-diffusion-3.5-large-turbo"
-model_id = "stable-diffusion-xl-1024-v1-0"
+mode = "local"
+model_name = "flux-fill"
+model_id = "black-forest-labs/FLUX.1-Fill-dev"
+stability_endpoint = "https://api.stability.ai/v2beta/stable-image/edit/inpaint"
+stability_output_format = "png"
 prompt = "Generate a realistic healthy adult right hand in first-person view, naturally interacting with the target object inside the masked region. Preserve the object identity and scene layout. Avoid extra fingers, deformed anatomy, and changes outside the masked region."
 guidance_scale = 30.0
 num_inference_steps = 50
 pad_ratio = 0.25
 preserve_unmasked_pixels = true
+
+[phase5_mano]
+hamer_root = "external/hamer"
+checkpoint = ""
+body_detector = "vitdet"
+batch_size = 8
+rescale_factor = 2.0
+detector_score_threshold = 0.5
+hand_keypoint_score_threshold = 0.5
+min_hand_keypoints = 4
+hand_side = "right"
+download_models = true
+
+[phase6_prosthetic_action]
+mjcf_path = "hand/folding_hand/folding.xml"
+mesh_dir = "hand/folding_hand/meshes"
+hand_preference = "right"
+grid_samples = 21
+refine_iterations = 2
+preserve_scale = false
+min_scale = 0.25
+max_scale = 4.0

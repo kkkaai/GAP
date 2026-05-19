@@ -1,0 +1,1 @@
+controller_joint_names: ['', 'th_base', 'th_pip', 'th_mip', 'th_dip', 'ff_base', 'ff_pip', 'ff_dip', 'mf_pip', 'mf_dip', 'rf_base', 'rf_pip', 'rf_dip', 'lf_base', 'lf_pip', 'lf_dip', ]

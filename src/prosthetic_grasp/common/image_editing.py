@@ -12,22 +12,83 @@ from prosthetic_grasp.common.secrets import get_secret
 from prosthetic_grasp.common.types import ROIBox
 
 
+FLUX_FILL_MODEL_ID = "black-forest-labs/FLUX.1-Fill-dev"
+STABILITY_SDXL_MODEL_ID = "stable-diffusion-xl-1024-v1-0"
+STABILITY_ERASE_ENDPOINT = "https://api.stability.ai/v2beta/stable-image/edit/erase"
+STABILITY_INPAINT_ENDPOINT = "https://api.stability.ai/v2beta/stable-image/edit/inpaint"
+STABILITY_LEGACY_INPAINT_MODEL_NAME = "stable-diffusion-3.5-large-turbo"
+
+
 @dataclass
 class ImageEditConfig:
-    mode: str = "api"
-    model_name: str = "stable-diffusion-3.5-large-turbo"
-    model_id: str = "black-forest-labs/FLUX.1-Fill-dev"
+    mode: str = "local"
+    model_name: str = "flux-fill"
+    model_id: str = FLUX_FILL_MODEL_ID
     prompt: str = ""
     guidance_scale: float = 30.0
     num_inference_steps: int = 50
     pad_ratio: float = 0.25
     preserve_unmasked_pixels: bool = True
     openai_model: str = "gpt-image-1"
-    stability_endpoint: str = "https://api.stability.ai/v2beta/stable-image/edit/inpaint"
+    stability_endpoint: str = ""
+    stability_output_format: str = "png"
+
+    def __post_init__(self) -> None:
+        self.mode = self.mode.strip().lower()
+        self.model_name = self.model_name.strip().lower()
+        if self.guidance_scale < 0:
+            raise ValueError(f"guidance_scale must be non-negative, got {self.guidance_scale}.")
+        if self.num_inference_steps <= 0:
+            raise ValueError(f"num_inference_steps must be positive, got {self.num_inference_steps}.")
+        if self.pad_ratio < 0:
+            raise ValueError(f"pad_ratio must be non-negative, got {self.pad_ratio}.")
+        if self.mode == "local":
+            if self.model_name != "flux-fill":
+                raise ValueError(f"Local image editing supports only model_name='flux-fill', got {self.model_name!r}.")
+            if not self.model_id:
+                raise ValueError("Local flux-fill requires a non-empty model_id.")
+            return
+        if self.mode == "api":
+            supported_api_models = {
+                "flux-fill",
+                "gpt",
+                "openai",
+                "gpt-image-1",
+                "stability-erase",
+                "stability-inpaint",
+                STABILITY_LEGACY_INPAINT_MODEL_NAME,
+            }
+            if self.model_name not in supported_api_models:
+                raise ValueError(f"Unsupported API image-edit model_name: {self.model_name!r}.")
+            if self.model_name == STABILITY_LEGACY_INPAINT_MODEL_NAME:
+                self.model_name = "stability-inpaint"
+            if self.model_name == "stability-inpaint" and self.model_id == FLUX_FILL_MODEL_ID:
+                self.model_id = STABILITY_SDXL_MODEL_ID
+            if self.stability_output_format not in {"png", "jpeg", "webp"}:
+                raise ValueError(
+                    f"stability_output_format must be 'png', 'jpeg', or 'webp', got {self.stability_output_format!r}."
+                )
+            return
+        raise ValueError(f"Unsupported image-edit mode: {self.mode!r}.")
+
+
+_LOCAL_FLUX_FILL_PIPELINES: dict[tuple[str, str, str], object] = {}
+
+
+def _validate_rgb_and_mask(image: np.ndarray, mask: np.ndarray) -> None:
+    if image.ndim != 3 or image.shape[2] != 3:
+        raise ValueError(f"Expected RGB image with shape (H, W, 3), got {image.shape}.")
+    if mask.ndim != 2:
+        raise ValueError(f"Expected 2D mask with shape (H, W), got {mask.shape}.")
+    if image.shape[:2] != mask.shape:
+        raise ValueError(f"Image/mask size mismatch: image={image.shape[:2]}, mask={mask.shape}.")
 
 
 def crop_from_mask(image: np.ndarray, mask: np.ndarray, pad_ratio: float = 0.25) -> tuple[np.ndarray, np.ndarray, ROIBox]:
+    _validate_rgb_and_mask(image, mask)
     ys, xs = np.where(mask)
+    if len(xs) == 0:
+        raise ValueError("Mask is empty; cannot compute ROI crop.")
     y0, y1 = ys.min(), ys.max()
     x0, x1 = xs.min(), xs.max()
     h, w = image.shape[:2]
@@ -43,12 +104,16 @@ def crop_from_mask(image: np.ndarray, mask: np.ndarray, pad_ratio: float = 0.25)
 
 
 def paste_crop_back(full_rgb: np.ndarray, crop_rgb: np.ndarray, crop_box: ROIBox) -> np.ndarray:
+    expected_shape = (crop_box.y1 - crop_box.y0, crop_box.x1 - crop_box.x0)
+    if crop_rgb.shape[:2] != expected_shape:
+        raise ValueError(f"Crop size mismatch: expected {expected_shape}, got {crop_rgb.shape[:2]}.")
     out = full_rgb.copy()
     out[crop_box.y0:crop_box.y1, crop_box.x0:crop_box.x1] = crop_rgb
     return out
 
 
 def preserve_unmasked_pixels(source_rgb: np.ndarray, edited_rgb: np.ndarray, mask: np.ndarray) -> np.ndarray:
+    _validate_rgb_and_mask(source_rgb, mask)
     if source_rgb.shape != edited_rgb.shape:
         raise ValueError("Source crop and edited crop must have identical shapes.")
     out = edited_rgb.copy()
@@ -86,6 +151,27 @@ def _resize_rgb_and_mask(image_rgb: np.ndarray, mask: np.ndarray, size: tuple[in
     return resized_rgb, resized_mask
 
 
+def _ensure_rgb_size(image_rgb: np.ndarray, target_shape: tuple[int, int, int]) -> np.ndarray:
+    target_h, target_w = target_shape[:2]
+    if image_rgb.ndim == 2:
+        image_rgb = np.stack([image_rgb] * 3, axis=-1)
+    if image_rgb.ndim != 3:
+        raise ValueError(f"Expected edited RGB image with 2 or 3 dimensions, got {image_rgb.shape}.")
+    if image_rgb.shape[-1] == 1:
+        image_rgb = np.repeat(image_rgb, 3, axis=-1)
+    if image_rgb.shape[-1] == 4:
+        image_rgb = image_rgb[..., :3]
+    if image_rgb.shape[-1] != 3:
+        raise ValueError(f"Expected edited RGB image with 3 channels, got {image_rgb.shape}.")
+    if image_rgb.dtype != np.uint8:
+        image_rgb = np.clip(image_rgb, 0, 255).astype(np.uint8)
+    if image_rgb.shape[:2] != (target_h, target_w):
+        image_rgb = np.array(
+            Image.fromarray(image_rgb).resize((target_w, target_h), Image.Resampling.LANCZOS).convert("RGB")
+        )
+    return image_rgb
+
+
 def _pick_stability_sdxl_size(image_rgb: np.ndarray) -> tuple[int, int]:
     valid_sizes = [
         (1024, 1024),
@@ -120,19 +206,46 @@ def _decode_api_image(payload: dict) -> np.ndarray:
     raise RuntimeError(f"Unsupported image API response payload: {payload}")
 
 
+def _decode_stability_error(response) -> str:
+    try:
+        return str(response.json())
+    except ValueError:
+        return response.text
+
+
+def _raise_for_stability_error(response, operation: str) -> None:
+    if response.ok:
+        return
+    raise RuntimeError(
+        f"Stability {operation} API failed with HTTP {response.status_code}: {_decode_stability_error(response)}"
+    )
+
+
+def _get_stability_api_key() -> str:
+    api_key = get_secret("STABILITY_API_KEY", required=True)
+    if not api_key.startswith("sk-"):
+        raise RuntimeError("STABILITY_API_KEY must be a Stability API key beginning with 'sk-'.")
+    return api_key
+
+
 def _run_local_flux_fill(config: ImageEditConfig, image_rgb: np.ndarray, mask: np.ndarray) -> np.ndarray:
     import torch
     from diffusers import FluxFillPipeline
 
+    if not config.model_id:
+        raise ValueError(f"Local flux-fill requires config.model_id, for example {FLUX_FILL_MODEL_ID!r}.")
+
     device = "cuda" if torch.cuda.is_available() else "cpu"
-    pipe = FluxFillPipeline.from_pretrained(
-        config.model_id,
-        torch_dtype=torch.bfloat16 if torch.cuda.is_available() else torch.float32,
-    )
-    if device == "cuda":
-        pipe.enable_model_cpu_offload()
-    else:
-        pipe = pipe.to(device)
+    torch_dtype = torch.bfloat16 if torch.cuda.is_available() else torch.float32
+    cache_key = (config.model_id, str(torch_dtype), device)
+    pipe = _LOCAL_FLUX_FILL_PIPELINES.get(cache_key)
+    if pipe is None:
+        pipe = FluxFillPipeline.from_pretrained(config.model_id, torch_dtype=torch_dtype)
+        if device == "cuda":
+            pipe.enable_model_cpu_offload()
+        else:
+            pipe = pipe.to(device)
+        _LOCAL_FLUX_FILL_PIPELINES[cache_key] = pipe
 
     result = pipe(
         prompt=config.prompt,
@@ -211,63 +324,62 @@ def _run_openai_image_edit_api(config: ImageEditConfig, image_rgb: np.ndarray, m
     return _decode_api_image(response.json())
 
 
-def _run_stability_api(config: ImageEditConfig, image_rgb: np.ndarray, mask: np.ndarray) -> np.ndarray:
+def _stability_headers(api_key: str) -> dict[str, str]:
+    return {
+        "Authorization": f"Bearer {api_key}",
+        "Accept": "image/*",
+    }
+
+
+def _run_stability_erase_api(config: ImageEditConfig, image_rgb: np.ndarray, mask: np.ndarray) -> np.ndarray:
     import requests
 
-    api_key = get_secret("STABILITY_API_KEY", required=True)
-    modern_files = {
+    api_key = _get_stability_api_key()
+    endpoint = config.stability_endpoint or STABILITY_ERASE_ENDPOINT
+    files = {
         "image": ("image.png", _array_to_png_bytes(image_rgb), "image/png"),
         "mask": ("mask.png", _binary_mask_to_png_bytes(mask), "image/png"),
     }
-    modern_data = {
-        "prompt": config.prompt,
-        "output_format": "png",
+    data = {
+        "output_format": config.stability_output_format,
     }
-    modern_response = requests.post(
-        config.stability_endpoint,
-        headers={
-            "Authorization": f"Bearer {api_key}",
-            "Accept": "image/*",
-        },
-        files=modern_files,
-        data=modern_data,
+    response = requests.post(
+        endpoint,
+        headers=_stability_headers(api_key),
+        files=files,
+        data=data,
         timeout=300,
     )
-    if modern_response.ok:
-        return np.array(Image.open(io.BytesIO(modern_response.content)).convert("RGB"))
+    _raise_for_stability_error(response, "erase")
+    return np.array(Image.open(io.BytesIO(response.content)).convert("RGB"))
 
-    engine_id = config.model_id or "stable-diffusion-xl-1024-v1-0"
-    legacy_url = f"https://api.stability.ai/v1/generation/{engine_id}/image-to-image/masking"
-    legacy_headers = {
-        "Authorization": f"Bearer {api_key}",
-        "Accept": "application/json",
+
+def _run_stability_inpaint_api(config: ImageEditConfig, image_rgb: np.ndarray, mask: np.ndarray) -> np.ndarray:
+    import requests
+
+    api_key = _get_stability_api_key()
+    endpoint = config.stability_endpoint or STABILITY_INPAINT_ENDPOINT
+    files = {
+        "image": ("image.png", _array_to_png_bytes(image_rgb), "image/png"),
+        "mask": ("mask.png", _binary_mask_to_png_bytes(mask), "image/png"),
     }
-    legacy_files = {
-        "init_image": ("init_image.png", _array_to_png_bytes(image_rgb), "image/png"),
-        "mask_image": ("mask_image.png", _binary_mask_to_png_bytes(mask), "image/png"),
+    data = {
+        "prompt": config.prompt,
+        "output_format": config.stability_output_format,
     }
-    legacy_data = {
-        "mask_source": "MASK_IMAGE_WHITE",
-        "text_prompts[0][text]": config.prompt,
-        "text_prompts[0][weight]": "1",
-        "cfg_scale": str(config.guidance_scale),
-        "samples": "1",
-        "steps": str(config.num_inference_steps),
-    }
-    legacy_response = requests.post(legacy_url, headers=legacy_headers, files=legacy_files, data=legacy_data, timeout=300)
-    legacy_response.raise_for_status()
-    payload = legacy_response.json()
-    artifacts = payload.get("artifacts") or []
-    if not artifacts:
-        raise RuntimeError(
-            f"Stability API returned no artifacts. Modern error={modern_response.text!r}, legacy payload={payload!r}"
-        )
-    artifact = artifacts[0]
-    image_bytes = base64.b64decode(artifact["base64"])
-    return np.array(Image.open(io.BytesIO(image_bytes)).convert("RGB"))
+    response = requests.post(
+        endpoint,
+        headers=_stability_headers(api_key),
+        files=files,
+        data=data,
+        timeout=300,
+    )
+    _raise_for_stability_error(response, "inpaint")
+    return np.array(Image.open(io.BytesIO(response.content)).convert("RGB"))
 
 
 def run_masked_image_edit(config: ImageEditConfig, image_rgb: np.ndarray, mask: np.ndarray) -> np.ndarray:
+    _validate_rgb_and_mask(image_rgb, mask)
     model_name = config.model_name.strip().lower()
     mode = config.mode.strip().lower()
 
@@ -282,13 +394,16 @@ def run_masked_image_edit(config: ImageEditConfig, image_rgb: np.ndarray, mask: 
             edited = _run_bfl_flux_fill_api(config, image_rgb, mask)
         elif model_name in {"gpt", "openai", "gpt-image-1"}:
             edited = _run_openai_image_edit_api(config, image_rgb, mask)
-        elif model_name == "stable-diffusion-3.5-large-turbo":
-            edited = _run_stability_api(config, image_rgb, mask)
+        elif model_name == "stability-erase":
+            edited = _run_stability_erase_api(config, image_rgb, mask)
+        elif model_name in {"stability-inpaint", STABILITY_LEGACY_INPAINT_MODEL_NAME}:
+            edited = _run_stability_inpaint_api(config, image_rgb, mask)
         else:
             raise ValueError(f"Unsupported API image-edit model_name: {config.model_name}")
     else:
         raise ValueError(f"Unsupported image-edit mode: {config.mode}")
 
+    edited = _ensure_rgb_size(edited, image_rgb.shape)
     if config.preserve_unmasked_pixels:
         edited = preserve_unmasked_pixels(image_rgb, edited, mask)
     return edited

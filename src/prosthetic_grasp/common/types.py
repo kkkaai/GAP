@@ -56,6 +56,8 @@ class Phase3EraseResult:
 @dataclass
 class Phase4InpaintResult:
     roi_box: ROIBox
+    rgb_crop: Array
+    mask_crop: Array
     inpaint_crop: Array
     inpaint_full: Array
     mode: str
@@ -70,6 +72,45 @@ class PhasePlaceholderResult:
 
 
 @dataclass
+class Phase5HandPrediction:
+    hand_index: int
+    is_right: bool
+    bbox_xyxy: Array
+    keypoints_2d: Array
+    keypoint_score_mean: float
+    vertices: Array
+    keypoints_3d: Array
+    pred_cam: Array
+    pred_cam_t_crop: Array
+    pred_cam_t_full: Array
+    focal_length: float
+    mano_params: dict[str, Array]
+
+
+@dataclass
+class Phase5ManoResult:
+    status: str
+    message: str
+    faces: Array | None = None
+    hands: list[Phase5HandPrediction] = field(default_factory=list)
+
+
+@dataclass
+class Phase6ProstheticActionResult:
+    status: str
+    message: str
+    selected_hand_index: int | None
+    action_names: list[str]
+    action: Array
+    mano_wrist: Array | None = None
+    mano_fingertips: Array | None = None
+    target_fingertips_wrist: Array | None = None
+    prosthetic_fingertips_wrist: Array | None = None
+    fingertip_error: Array | None = None
+    metadata: dict[str, Any] = field(default_factory=dict)
+
+
+@dataclass
 class PipelineResult:
     status: str
     frame: SensorFrame | None = None
@@ -77,8 +118,8 @@ class PipelineResult:
     phase2_lollipop: Phase2LollipopResult | None = None
     phase3_erase: Phase3EraseResult | None = None
     phase4_inpaint: Phase4InpaintResult | None = None
-    phase5_mano: PhasePlaceholderResult | None = None
-    phase6_prosthetic_action: PhasePlaceholderResult | None = None
+    phase5_mano: Phase5ManoResult | PhasePlaceholderResult | None = None
+    phase6_prosthetic_action: Phase6ProstheticActionResult | PhasePlaceholderResult | None = None
 
     def to_json_dict(self) -> dict[str, Any]:
         def convert(value: Any) -> Any:
