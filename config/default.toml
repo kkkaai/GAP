@@ -4,6 +4,11 @@ precomputed_mask_path = "testcase/coffeecup_hand_mask.png"
 text_prompt = "hand. coffee cup."
 box_threshold = 0.25
 text_threshold = 0.25
+model_id = "BAAI/seggpt-vit-large"
+support_image_path = ""
+support_mask_path = ""
+threshold = 0.5
+device = "auto"
 
 [phase2_lollipop]
 min_mask_points = 10

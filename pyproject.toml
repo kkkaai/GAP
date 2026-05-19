@@ -29,6 +29,12 @@ flux-stage = [
 camera = [
   "pyrealsense2",
 ]
+seggpt = [
+  "torch",
+  "transformers",
+  "accelerate",
+  "safetensors",
+]
 
 [tool.setuptools]
 package-dir = {"" = "src"}
