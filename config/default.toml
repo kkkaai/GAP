@@ -58,11 +58,13 @@ hand_side = "right"
 download_models = true
 
 [phase6_prosthetic_action]
-mjcf_path = "hand/folding_hand/folding.xml"
-mesh_dir = "hand/folding_hand/meshes"
+robot_profile = "shadow_hand"
+tip_point = "mesh_tip"
 hand_preference = "right"
-grid_samples = 21
-refine_iterations = 2
+optimization_restarts = 8
+max_nfev = 250
+regularization_weight = 0.002
 preserve_scale = false
 min_scale = 0.25
 max_scale = 4.0
+random_seed = 7

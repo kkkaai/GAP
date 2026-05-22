@@ -18,6 +18,10 @@ __pycache__/
 venv/
 .env
 .env.*
+env.txt
+
+.vscode/
+models/mano/
 
 outputs/
 dist/
