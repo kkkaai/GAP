@@ -13,6 +13,18 @@ import trimesh
 from scipy.optimize import least_squares
 from yourdfpy import URDF
 
+for _name, _value in {
+    "bool": bool,
+    "int": int,
+    "float": float,
+    "complex": complex,
+    "object": object,
+    "unicode": str,
+    "str": str,
+}.items():
+    if _name not in np.__dict__:
+        setattr(np, _name, _value)
+
 
 FINGER_NAMES = ["thumb", "index", "middle", "ring", "little"]
 MANO_FINGERTIP_INDICES = np.array([4, 8, 12, 16, 20], dtype=np.int64)

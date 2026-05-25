@@ -68,6 +68,7 @@
     <worldbody>
         <body name="base_link" pos="0 0 0">
             <geom type="mesh" rgba="0.79216 0.81961 0.93333 1" mesh="base_link"/>
+            <site name="base_link_origin" pos="0 0 0" size="0.008" rgba="1 0 0 1"/>
             <body name="th_base" pos="-0.0080512 -0.067822 0.020582" quat="0.707105 0.707108 0 0">
                 <inertial pos="-0.014284 0.010211 -0.0041" quat="0.586646 0.386826 0.138378 0.697899" mass="0.0085863"
                           diaginertia="6.55258e-07 4.40944e-07 4.28258e-07"/>

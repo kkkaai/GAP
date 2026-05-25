@@ -12,14 +12,9 @@ device = "auto"
 
 [phase2_lollipop]
 min_mask_points = 10
-palm_center_ratio = 0.30
-min_axis_band_px = 20.0
-axis_band_ratio = 0.12
-palm_width_std_scale = 1.8
-min_palm_half_width = 8.0
-palm_radius_scale = 1.25
-strip_half_width_scale = 0.55
-min_strip_half_width = 4.0
+min_direction_norm_px = 1.0
+line_length_scale = 2.0
+min_iou = 0.5
 
 [phase3_erase]
 mode = "local"

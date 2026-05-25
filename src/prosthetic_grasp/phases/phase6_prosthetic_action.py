@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from pathlib import Path
+import xml.etree.ElementTree as ET
 from typing import Any
 
 import numpy as np
@@ -19,6 +20,7 @@ _FINGER_NAMES = ["thumb", "index", "middle", "ring", "little"]
 _ROBOT_PROFILES: dict[str, dict[str, Any]] = {
     "shadow_hand": {
         "urdf_path": "hand/shadow_hand/shadowhand.urdf",
+        "wrist_link": "robot0:palm",
         "fingertip_links": [
             "robot0:thdistal",
             "robot0:ffdistal",
@@ -30,6 +32,9 @@ _ROBOT_PROFILES: dict[str, dict[str, Any]] = {
     },
     "folding_hand": {
         "urdf_path": "hand/folding_hand/urdf/folding.urdf",
+        "xml_path": "hand/folding_hand/folding.xml",
+        "model_format": "xml",
+        "wrist_link": "base_link",
         "fingertip_links": [
             "th_distal",
             "ff_distal",
@@ -58,6 +63,7 @@ _ROBOT_PROFILES: dict[str, dict[str, Any]] = {
     },
     "inspire_hand": {
         "urdf_path": "hand/inspire_hand_ftp/urdf/inspire_right.urdf",
+        "wrist_link": "right_base_link",
         "fingertip_links": [
             "R_thumb_tip",
             "R_index_tip",
@@ -86,6 +92,9 @@ class Phase6ProstheticActionConfig:
 
     robot_profile: str = "shadow_hand"
     robot_urdf_path: str = ""
+    robot_xml_path: str = ""
+    model_format: str = ""
+    wrist_link: str = ""
     fingertip_links: list[str] = field(default_factory=list)
     joint_names: list[str] = field(default_factory=list)
     tip_point: str = ""
@@ -112,6 +121,9 @@ class Phase6ProstheticActionConfig:
     def __post_init__(self) -> None:
         self.robot_profile = self.robot_profile.strip()
         self.robot_urdf_path = self.robot_urdf_path.strip()
+        self.robot_xml_path = self.robot_xml_path.strip()
+        self.model_format = self.model_format.strip().lower()
+        self.wrist_link = self.wrist_link.strip()
         self.hand_preference = self.hand_preference.strip().lower()
         self.tip_point = self.tip_point.strip()
         self.shadow_urdf_path = self.shadow_urdf_path.strip()
@@ -121,6 +133,8 @@ class Phase6ProstheticActionConfig:
 
         if self.robot_urdf_path == "" and self.shadow_urdf_path:
             self.robot_urdf_path = self.shadow_urdf_path
+        if self.robot_xml_path == "" and self.model_format in {"xml", "mjcf"} and self.mjcf_path:
+            self.robot_xml_path = self.mjcf_path
         if self.tip_point == "" and self.shadow_point:
             self.tip_point = "mesh_tip" if self.shadow_point == "distal_mesh_tip" else "link_origin"
 
@@ -133,6 +147,11 @@ class Phase6ProstheticActionConfig:
             raise ValueError(
                 "tip_point must be 'mesh_tip' or 'link_origin', "
                 f"got {self.tip_point!r}."
+            )
+        if self.model_format and self.model_format not in {"urdf", "xml", "mjcf"}:
+            raise ValueError(
+                "model_format must be 'urdf', 'xml', or 'mjcf', "
+                f"got {self.model_format!r}."
             )
         if self.optimization_restarts <= 0:
             raise ValueError(
@@ -151,7 +170,9 @@ class Phase6ProstheticActionConfig:
                 f"got ({self.min_scale}, {self.max_scale})."
             )
 
-    def resolved_robot(self) -> tuple[Path, list[str], list[str] | None, str, str, dict[str, tuple[float, float]]]:
+    def resolved_robot(
+        self,
+    ) -> tuple[Path, str, str, list[str], list[str] | None, str, str, dict[str, tuple[float, float]]]:
         profile = self.robot_profile
         if profile not in _ROBOT_PROFILES and profile != "custom":
             raise ValueError(
@@ -160,25 +181,37 @@ class Phase6ProstheticActionConfig:
             )
 
         preset = _ROBOT_PROFILES.get(profile, {})
-        urdf_path = self.robot_urdf_path or str(preset.get("urdf_path", ""))
+        model_format = self.model_format or str(preset.get("model_format", "urdf"))
+        if model_format == "mjcf":
+            model_format = "xml"
+        model_path = (
+            self.robot_xml_path
+            if model_format == "xml"
+            else self.robot_urdf_path
+        )
+        model_path = model_path or str(preset.get("xml_path" if model_format == "xml" else "urdf_path", ""))
+        wrist_link = self.wrist_link or str(preset.get("wrist_link", ""))
         fingertip_links = self.fingertip_links or list(preset.get("fingertip_links", []))
         tip_point = self.tip_point or str(preset.get("tip_point", "mesh_tip"))
         joint_names = self.joint_names or None
         joint_limits = dict(preset.get("joint_limits", {}))
-        if not urdf_path:
-            raise ValueError("robot_urdf_path is required for custom Phase6 retargeting.")
+        if not model_path:
+            raise ValueError("robot_urdf_path or robot_xml_path is required for custom Phase6 retargeting.")
+        if not wrist_link:
+            raise ValueError("wrist_link is required for custom Phase6 retargeting.")
         if len(fingertip_links) != 5:
             raise ValueError(
                 "fingertip_links must contain exactly five links in thumb/index/"
                 f"middle/ring/little order, got {fingertip_links!r}."
             )
-        return Path(urdf_path), fingertip_links, joint_names, tip_point, profile, joint_limits
+        return Path(model_path), model_format, wrist_link, fingertip_links, joint_names, tip_point, profile, joint_limits
 
 
 class _RobotHandKinematics:
     def __init__(
         self,
         urdf_path: str | Path,
+        wrist_link: str,
         fingertip_links: list[str],
         joint_names: list[str] | None,
         tip_point: str,
@@ -190,10 +223,13 @@ class _RobotHandKinematics:
         if not self.urdf_path.exists():
             raise FileNotFoundError(f"Robot hand URDF does not exist: {self.urdf_path}")
         self.robot = URDF.load(str(self.urdf_path))
+        self.wrist_link = wrist_link
         self.fingertip_links = list(fingertip_links)
         self.joint_names = list(joint_names) if joint_names is not None else list(self.robot.actuated_joint_names)
         self.tip_point = tip_point
         self.joint_limit_overrides = joint_limit_overrides or {}
+        if self.wrist_link not in self.robot.link_map:
+            raise ValueError(f"Robot hand URDF has no wrist link {self.wrist_link!r}.")
         for link_name in self.fingertip_links:
             if link_name not in self.robot.link_map:
                 raise ValueError(f"Robot hand URDF has no fingertip link {link_name!r}.")
@@ -207,13 +243,15 @@ class _RobotHandKinematics:
     def forward(self, action: np.ndarray) -> dict[str, np.ndarray]:
         q = np.asarray(action, dtype=np.float64)
         self.robot.update_cfg(dict(zip(self.joint_names, q)))
+        world_to_wrist = np.linalg.inv(self.robot.get_transform(self.wrist_link))
         tips = []
         for link_name in self.fingertip_links:
             transform = self.robot.get_transform(link_name)
             if self.tip_offsets is None:
-                tips.append(transform[:3, 3].copy())
+                tip_world = transform[:3, 3].copy()
             else:
-                tips.append(transform[:3, :3] @ self.tip_offsets[link_name] + transform[:3, 3])
+                tip_world = transform[:3, :3] @ self.tip_offsets[link_name] + transform[:3, 3]
+            tips.append((world_to_wrist @ np.append(tip_world, 1.0))[:3])
         return {
             "wrist": np.zeros(3, dtype=np.float64),
             "fingertips": np.stack(tips, axis=0),
@@ -264,12 +302,333 @@ class _RobotHandKinematics:
         return offsets
 
 
+def _parse_vec(value: str | None, default: tuple[float, ...]) -> np.ndarray:
+    if value is None or value.strip() == "":
+        return np.asarray(default, dtype=np.float64)
+    return np.asarray([float(part) for part in value.split()], dtype=np.float64)
+
+
+def _quat_to_matrix(quat: np.ndarray) -> np.ndarray:
+    # MuJoCo quaternions are stored as w x y z.
+    w, x, y, z = quat
+    return np.array(
+        [
+            [1 - 2 * (y * y + z * z), 2 * (x * y - z * w), 2 * (x * z + y * w)],
+            [2 * (x * y + z * w), 1 - 2 * (x * x + z * z), 2 * (y * z - x * w)],
+            [2 * (x * z - y * w), 2 * (y * z + x * w), 1 - 2 * (x * x + y * y)],
+        ],
+        dtype=np.float64,
+    )
+
+
+def _axis_angle_matrix(axis: np.ndarray, angle: float) -> np.ndarray:
+    norm = float(np.linalg.norm(axis))
+    if norm < 1e-12:
+        return np.eye(3, dtype=np.float64)
+    x, y, z = axis / norm
+    c = float(np.cos(angle))
+    s = float(np.sin(angle))
+    one_c = 1.0 - c
+    return np.array(
+        [
+            [c + x * x * one_c, x * y * one_c - z * s, x * z * one_c + y * s],
+            [y * x * one_c + z * s, c + y * y * one_c, y * z * one_c - x * s],
+            [z * x * one_c - y * s, z * y * one_c + x * s, c + z * z * one_c],
+        ],
+        dtype=np.float64,
+    )
+
+
+def _make_transform(rotation: np.ndarray, translation: np.ndarray) -> np.ndarray:
+    transform = np.eye(4, dtype=np.float64)
+    transform[:3, :3] = rotation
+    transform[:3, 3] = translation
+    return transform
+
+
+@dataclass
+class _MjcfBody:
+    name: str
+    parent: str | None
+    pos: np.ndarray
+    quat: np.ndarray
+    joint_names: list[str]
+    geoms: list[str]
+
+
+@dataclass
+class _MjcfJoint:
+    name: str
+    body: str
+    axis: np.ndarray
+    range: tuple[float, float]
+
+
+@dataclass
+class _MjcfActuator:
+    name: str
+    range: tuple[float, float]
+    joint: str | None = None
+    tendon: str | None = None
+
+
+class _MjcfHandKinematics:
+    def __init__(
+        self,
+        xml_path: str | Path,
+        wrist_link: str,
+        fingertip_links: list[str],
+        joint_names: list[str] | None,
+        tip_point: str,
+    ) -> None:
+        self.xml_path = Path(xml_path)
+        if not self.xml_path.exists():
+            raise FileNotFoundError(f"Robot hand XML does not exist: {self.xml_path}")
+        self.wrist_link = wrist_link
+        self.fingertip_links = list(fingertip_links)
+        self.tip_point = tip_point
+        self.tree = ET.parse(self.xml_path)
+        self.root = self.tree.getroot()
+        self.mesh_dir = self.xml_path.parent / self.root.find("compiler").get("meshdir", ".") if self.root.find("compiler") is not None else self.xml_path.parent
+
+        self.default_ranges = self._parse_default_ranges()
+        self.mesh_assets = self._parse_mesh_assets()
+        self.bodies: dict[str, _MjcfBody] = {}
+        self.joints: dict[str, _MjcfJoint] = {}
+        self._parse_bodies()
+        self.tendons = self._parse_fixed_tendons()
+        self.actuators = self._parse_actuators()
+
+        if self.wrist_link not in self.bodies:
+            raise ValueError(f"Robot XML has no wrist body {self.wrist_link!r}.")
+        for link_name in self.fingertip_links:
+            if link_name not in self.bodies:
+                raise ValueError(f"Robot XML has no fingertip body {link_name!r}.")
+
+        if self.actuators and joint_names is None:
+            self.joint_names = [actuator.name for actuator in self.actuators]
+        else:
+            self.joint_names = list(joint_names) if joint_names is not None else list(self.joints)
+        self.zero_action = np.zeros(len(self.joint_names), dtype=np.float64)
+        self.tip_offsets = self._mesh_tip_offsets() if tip_point == "mesh_tip" else None
+
+    @property
+    def urdf_path(self) -> Path:
+        return self.xml_path
+
+    def forward(self, action: np.ndarray) -> dict[str, np.ndarray]:
+        joint_values = self._action_to_joint_values(np.asarray(action, dtype=np.float64))
+        transforms = self._body_transforms(joint_values)
+        world_to_wrist = np.linalg.inv(transforms[self.wrist_link])
+        tips = []
+        for link_name in self.fingertip_links:
+            transform = transforms[link_name]
+            if self.tip_offsets is None:
+                tip_world = transform[:3, 3].copy()
+            else:
+                tip_world = transform[:3, :3] @ self.tip_offsets[link_name] + transform[:3, 3]
+            tips.append((world_to_wrist @ np.append(tip_world, 1.0))[:3])
+        return {"wrist": np.zeros(3, dtype=np.float64), "fingertips": np.stack(tips, axis=0)}
+
+    def joint_bounds(self) -> tuple[np.ndarray, np.ndarray]:
+        if self.actuators:
+            ranges = {actuator.name: actuator.range for actuator in self.actuators}
+        else:
+            ranges = {name: joint.range for name, joint in self.joints.items()}
+        lower, upper = zip(*(ranges[name] for name in self.joint_names))
+        return np.asarray(lower, dtype=np.float64), np.asarray(upper, dtype=np.float64)
+
+    def mesh_vertices(self, action: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+        import trimesh
+
+        joint_values = self._action_to_joint_values(np.asarray(action, dtype=np.float64))
+        transforms = self._body_transforms(joint_values)
+        world_to_wrist = np.linalg.inv(transforms[self.wrist_link])
+        meshes = []
+        for body_name, body in self.bodies.items():
+            for mesh_name in body.geoms:
+                mesh_path = self.mesh_assets.get(mesh_name)
+                if mesh_path is None:
+                    continue
+                mesh = trimesh.load_mesh(str(mesh_path), process=False)
+                vertices = np.asarray(mesh.vertices, dtype=np.float64)
+                vertices_h = np.concatenate([vertices, np.ones((vertices.shape[0], 1))], axis=1)
+                vertices_wrist = (world_to_wrist @ transforms[body_name] @ vertices_h.T).T[:, :3]
+                transformed = trimesh.Trimesh(vertices=vertices_wrist, faces=np.asarray(mesh.faces), process=False)
+                meshes.append(transformed)
+        if not meshes:
+            return np.zeros((0, 3), dtype=np.float64), np.zeros((0, 3), dtype=np.int64)
+        combined = trimesh.util.concatenate(meshes)
+        return np.asarray(combined.vertices, dtype=np.float64), np.asarray(combined.faces, dtype=np.int64)
+
+    def _parse_default_ranges(self) -> dict[str, tuple[float, float]]:
+        ranges = {}
+        for default in self.root.findall("./default/default"):
+            class_name = default.get("class")
+            if not class_name:
+                continue
+            joint = default.find("joint")
+            position = default.find("position")
+            if joint is not None and joint.get("range"):
+                value = _parse_vec(joint.get("range"), (0.0, 0.0))
+                ranges[f"joint:{class_name}"] = (float(value[0]), float(value[1]))
+            if position is not None and position.get("ctrlrange"):
+                value = _parse_vec(position.get("ctrlrange"), (0.0, 0.0))
+                ranges[f"actuator:{class_name}"] = (float(value[0]), float(value[1]))
+        return ranges
+
+    def _parse_mesh_assets(self) -> dict[str, Path]:
+        assets = {}
+        for mesh in self.root.findall("./asset/mesh"):
+            name = mesh.get("name")
+            filename = mesh.get("file")
+            if name and filename:
+                assets[name] = self.mesh_dir / filename
+        return assets
+
+    def _parse_bodies(self) -> None:
+        worldbody = self.root.find("worldbody")
+        if worldbody is None:
+            raise ValueError(f"Robot XML has no worldbody: {self.xml_path}")
+        for body in worldbody.findall("body"):
+            self._parse_body(body, None)
+
+    def _parse_body(self, elem: ET.Element, parent: str | None) -> None:
+        name = elem.get("name")
+        if not name:
+            return
+        joint_names = []
+        geoms = []
+        for joint in elem.findall("joint"):
+            joint_name = joint.get("name")
+            if not joint_name:
+                continue
+            range_value = _parse_vec(joint.get("range"), self.default_ranges.get(f"joint:{joint.get('class', '')}", (0.0, 0.0)))
+            axis = _parse_vec(joint.get("axis"), (0.0, 0.0, 1.0))
+            self.joints[joint_name] = _MjcfJoint(
+                name=joint_name,
+                body=name,
+                axis=axis,
+                range=(float(range_value[0]), float(range_value[1])),
+            )
+            joint_names.append(joint_name)
+        for geom in elem.findall("geom"):
+            if geom.get("type") == "mesh" and geom.get("mesh"):
+                geoms.append(str(geom.get("mesh")))
+        self.bodies[name] = _MjcfBody(
+            name=name,
+            parent=parent,
+            pos=_parse_vec(elem.get("pos"), (0.0, 0.0, 0.0)),
+            quat=_parse_vec(elem.get("quat"), (1.0, 0.0, 0.0, 0.0)),
+            joint_names=joint_names,
+            geoms=geoms,
+        )
+        for child in elem.findall("body"):
+            self._parse_body(child, name)
+
+    def _parse_fixed_tendons(self) -> dict[str, list[tuple[str, float]]]:
+        tendons = {}
+        for fixed in self.root.findall("./tendon/fixed"):
+            name = fixed.get("name")
+            if not name:
+                continue
+            joints = []
+            for joint in fixed.findall("joint"):
+                joint_name = joint.get("joint")
+                if joint_name:
+                    joints.append((joint_name, float(joint.get("coef", "1.0"))))
+            tendons[name] = joints
+        return tendons
+
+    def _parse_actuators(self) -> list[_MjcfActuator]:
+        actuators = []
+        for position in self.root.findall("./actuator/position"):
+            name = position.get("name")
+            if not name:
+                continue
+            if position.get("ctrlrange"):
+                range_value = _parse_vec(position.get("ctrlrange"), (0.0, 0.0))
+            else:
+                range_value = np.asarray(
+                    self.default_ranges.get(f"actuator:{position.get('class', '')}", (0.0, 0.0)),
+                    dtype=np.float64,
+                )
+            actuators.append(
+                _MjcfActuator(
+                    name=name,
+                    range=(float(range_value[0]), float(range_value[1])),
+                    joint=position.get("joint"),
+                    tendon=position.get("tendon"),
+                )
+            )
+        return actuators
+
+    def _action_to_joint_values(self, action: np.ndarray) -> dict[str, float]:
+        joint_values = {name: 0.0 for name in self.joints}
+        if self.actuators:
+            actuator_map = {actuator.name: actuator for actuator in self.actuators}
+            for name, value in zip(self.joint_names, action):
+                actuator = actuator_map[name]
+                if actuator.joint:
+                    joint_values[actuator.joint] = float(value)
+                elif actuator.tendon:
+                    for joint_name, coef in self.tendons.get(actuator.tendon, []):
+                        joint_values[joint_name] = float(value) * coef
+        else:
+            for name, value in zip(self.joint_names, action):
+                joint_values[name] = float(value)
+        return joint_values
+
+    def _body_transforms(self, joint_values: dict[str, float]) -> dict[str, np.ndarray]:
+        transforms: dict[str, np.ndarray] = {}
+        pending = list(self.bodies)
+        while pending:
+            progressed = False
+            for name in pending[:]:
+                body = self.bodies[name]
+                if body.parent is not None and body.parent not in transforms:
+                    continue
+                parent_transform = transforms[body.parent] if body.parent is not None else np.eye(4)
+                transform = parent_transform @ _make_transform(_quat_to_matrix(body.quat), body.pos)
+                for joint_name in body.joint_names:
+                    joint = self.joints[joint_name]
+                    transform = transform @ _make_transform(
+                        _axis_angle_matrix(joint.axis, joint_values.get(joint_name, 0.0)),
+                        np.zeros(3, dtype=np.float64),
+                    )
+                transforms[name] = transform
+                pending.remove(name)
+                progressed = True
+            if not progressed:
+                raise ValueError(f"Robot XML has cyclic or invalid body hierarchy: {self.xml_path}")
+        return transforms
+
+    def _mesh_tip_offsets(self) -> dict[str, np.ndarray]:
+        import trimesh
+
+        offsets = {}
+        for body_name in self.fingertip_links:
+            vertices_list = []
+            for mesh_name in self.bodies[body_name].geoms:
+                mesh_path = self.mesh_assets.get(mesh_name)
+                if mesh_path is None:
+                    continue
+                mesh = trimesh.load_mesh(str(mesh_path), process=False)
+                vertices_list.append(np.asarray(mesh.vertices, dtype=np.float64))
+            if not vertices_list:
+                offsets[body_name] = np.zeros(3, dtype=np.float64)
+                continue
+            vertices = np.concatenate(vertices_list, axis=0)
+            offsets[body_name] = vertices[np.argmax(np.linalg.norm(vertices, axis=1))]
+        return offsets
+
+
 class Phase6ProstheticAction:
     """Map MANO fingertips to a configurable fixed-wrist robot hand action."""
 
     def __init__(self, config: Phase6ProstheticActionConfig | None = None) -> None:
         self.config = config or Phase6ProstheticActionConfig()
-        self._model: _RobotHandKinematics | None = None
+        self._model: _RobotHandKinematics | _MjcfHandKinematics | None = None
         self._last_scale = 1.0
         self._resolved_profile = self.config.robot_profile
 
@@ -305,7 +664,10 @@ class Phase6ProstheticAction:
                 "mano_fingertip_indices": _MANO_FINGERTIP_INDICES.astype(int).tolist(),
                 "target_space": "robot_fixed_wrist_frame",
                 "robot_profile": self._resolved_profile,
+                "model_format": "xml" if isinstance(model, _MjcfHandKinematics) else "urdf",
+                "robot_model_path": str(model.urdf_path),
                 "robot_urdf_path": str(model.urdf_path),
+                "wrist_link": model.wrist_link,
                 "tip_point": model.tip_point,
                 "fingertip_links": list(model.fingertip_links),
                 "scale": float(self._last_scale),
@@ -331,16 +693,28 @@ class Phase6ProstheticAction:
             metadata={},
         )
 
-    def _ensure_model(self) -> _RobotHandKinematics:
+    def _ensure_model(self) -> _RobotHandKinematics | _MjcfHandKinematics:
         if self._model is None:
-            urdf_path, fingertip_links, joint_names, tip_point, profile, joint_limits = self.config.resolved_robot()
-            self._model = _RobotHandKinematics(
-                urdf_path,
-                fingertip_links,
-                joint_names,
-                tip_point,
-                joint_limits,
+            model_path, model_format, wrist_link, fingertip_links, joint_names, tip_point, profile, joint_limits = (
+                self.config.resolved_robot()
             )
+            if model_format == "xml":
+                self._model = _MjcfHandKinematics(
+                    model_path,
+                    wrist_link,
+                    fingertip_links,
+                    joint_names,
+                    tip_point,
+                )
+            else:
+                self._model = _RobotHandKinematics(
+                    model_path,
+                    wrist_link,
+                    fingertip_links,
+                    joint_names,
+                    tip_point,
+                    joint_limits,
+                )
             self._resolved_profile = profile
             self.config.action_names = list(self._model.joint_names)
         return self._model
