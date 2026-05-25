@@ -1,10 +1,10 @@
 [phase1_mask]
-mode = "precomputed"
+mode = "seggpt"
 precomputed_mask_path = "testcase/coffeecup_hand_mask.png"
 text_prompt = "hand. coffee cup."
 box_threshold = 0.25
 text_threshold = 0.25
-model_id = "BAAI/seggpt-vit-large"
+model_id = "external/models/seggpt-vit-large"
 support_image_path = ""
 support_mask_path = ""
 threshold = 0.5
@@ -17,9 +17,9 @@ line_length_scale = 2.0
 min_iou = 0.5
 
 [phase3_erase]
-mode = "local"
-model_name = "flux-fill"
-model_id = "black-forest-labs/FLUX.1-Fill-dev"
+mode = "api"
+model_name = "stability-erase"
+model_id = "stable-diffusion-xl-1024-v1-0"
 stability_endpoint = "https://api.stability.ai/v2beta/stable-image/edit/erase"
 stability_output_format = "png"
 prompt = "Remove the current hand or prosthetic hand from the masked region and complete the hidden background and object appearance naturally. Do not add any human hand. Preserve scene layout, object identity, and content outside the masked region."
@@ -29,9 +29,9 @@ pad_ratio = 0.25
 preserve_unmasked_pixels = true
 
 [phase4_inpaint]
-mode = "local"
-model_name = "flux-fill"
-model_id = "black-forest-labs/FLUX.1-Fill-dev"
+mode = "api"
+model_name = "stability-inpaint"
+model_id = "stable-diffusion-xl-1024-v1-0"
 stability_endpoint = "https://api.stability.ai/v2beta/stable-image/edit/inpaint"
 stability_output_format = "png"
 prompt = "Generate a realistic healthy adult right hand in first-person view, naturally interacting with the target object inside the masked region. Preserve the object identity and scene layout. Avoid extra fingers, deformed anatomy, and changes outside the masked region."
@@ -43,7 +43,7 @@ preserve_unmasked_pixels = true
 [phase5_mano]
 hamer_root = "external/hamer"
 checkpoint = ""
-body_detector = "vitdet"
+body_detector = "regnety"
 batch_size = 8
 rescale_factor = 2.0
 detector_score_threshold = 0.5

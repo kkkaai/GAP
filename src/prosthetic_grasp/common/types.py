@@ -125,6 +125,8 @@ class PipelineResult:
         def convert(value: Any) -> Any:
             if isinstance(value, np.ndarray):
                 return {"shape": list(value.shape), "dtype": str(value.dtype)}
+            if isinstance(value, np.generic):
+                return value.item()
             if isinstance(value, Path):
                 return str(value)
             if hasattr(value, "__dataclass_fields__"):

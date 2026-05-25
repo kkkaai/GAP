@@ -10,6 +10,7 @@ requires-python = ">=3.10"
 dependencies = [
   "numpy>=1.24",
   "Pillow>=10.0",
+  "tomli>=2.0; python_version < '3.11'",
 ]
 
 [project.optional-dependencies]
@@ -34,6 +35,11 @@ seggpt = [
   "transformers",
   "accelerate",
   "safetensors",
+]
+retargeting = [
+  "yourdfpy",
+  "trimesh",
+  "scipy>=1.11",
 ]
 
 [tool.setuptools]

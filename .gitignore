@@ -22,6 +22,10 @@ env.txt
 
 .vscode/
 models/mano/
+_DATA/
+hand/shadow_hand/converted_*.stl
+src/prosthetic_grasp/src_pic/
+src/prosthetic_grasp/coffeecup*.png
 
 outputs/
 dist/
