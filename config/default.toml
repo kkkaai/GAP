@@ -15,6 +15,8 @@ min_mask_points = 10
 min_direction_norm_px = 1.0
 line_length_scale = 2.0
 min_iou = 0.5
+palm_radius_scale = 1.1
+strip_width_scale = 1.1
 
 [phase3_erase]
 mode = "api"
@@ -22,11 +24,56 @@ model_name = "stability-erase"
 model_id = "stable-diffusion-xl-1024-v1-0"
 stability_endpoint = "https://api.stability.ai/v2beta/stable-image/edit/erase"
 stability_output_format = "png"
-prompt = "Remove the current hand or prosthetic hand from the masked region and complete the hidden background and object appearance naturally. Do not add any human hand. Preserve scene layout, object identity, and content outside the masked region."
+prompt = """
+# Restore Object-Only Daily-Use Scene
+
+Edit the input image by removing only the visible human hand, prosthetic hand, glove, wrist, sleeve, or arm from the masked region. Reconstruct the occluded object parts and background so the image becomes a realistic object-only scene.
+
+## Task and Scene Scope
+
+- The scene is a daily-use manipulation scene for prosthetic grasp research.
+- The target object should remain available for a future prosthetic or human grasp action.
+- Complete only the content hidden by the removed hand or prosthetic device.
+- If a reference image is provided, use it only to infer the original object, material, geometry, texture, and background continuity.
+
+## Object and Background Preservation
+
+- Keep the target object in its original position, scale, orientation, inclination, material, color, shape, topology, and identity.
+- Restore occluded object structures such as handles, rims, edges, holes, buttons, grips, caps, labels, and contact boundaries with continuous geometry.
+- Preserve the table, support surface, background, lighting, shadows, reflections, camera viewpoint, and all surrounding objects.
+- Do not move, deform, replace, redesign, or duplicate the object.
+- Do not change the number, position, or layout of surrounding objects.
+
+## Masked Region Editing
+
+- Use the mask as the editable region.
+- Remove every visible hand/prosthetic-related part inside the mask.
+- Reconstruct the missing object and background naturally inside the mask.
+- Keep all unmasked content visually unchanged.
+
+## Forbidden Content
+
+- Do not add any human hand, prosthetic hand, robotic hand, glove, wrist, forearm, sleeve, tool, gripper, claw, or extra object.
+- Do not add new attachments or structures connected to the object.
+- Avoid blurry patches, repeated textures, warped object edges, broken handles, missing rims, inconsistent shadows, and obvious inpainting artifacts.
+
+## Output
+
+Return a realistic image of the same scene with the hand removed and the occluded regions completed naturally.
+"""
 guidance_scale = 30.0
 num_inference_steps = 50
 pad_ratio = 0.25
 preserve_unmasked_pixels = true
+
+[phase4_intention]
+enabled = true
+model_id = "qwen/qwen3-vl-plus"
+fast_model_id = "qwen/qwen3-vl-flash"
+use_fast_model = false
+zenmux_base_url = "https://zenmux.ai/api/v1"
+temperature = 0.0
+max_tokens = 400
 
 [phase4_inpaint]
 mode = "api"
@@ -34,11 +81,14 @@ model_name = "stability-inpaint"
 model_id = "stable-diffusion-xl-1024-v1-0"
 stability_endpoint = "https://api.stability.ai/v2beta/stable-image/edit/inpaint"
 stability_output_format = "png"
-prompt = "Generate a realistic healthy adult right hand in first-person view, naturally interacting with the target object inside the masked region. Preserve the object identity and scene layout. Avoid extra fingers, deformed anatomy, and changes outside the masked region."
+intention = """
+Use a natural daily-use grasp that is appropriate for the visible target object. If the object has a handle, the right hand should grasp the handle. If the object is meant to be picked up, held, pressed, opened, carried, or stabilized, choose a plausible grasp for that action.
+"""
+prompt = ""
 guidance_scale = 30.0
 num_inference_steps = 50
 pad_ratio = 0.25
-preserve_unmasked_pixels = true
+preserve_unmasked_pixels = false
 
 [phase5_mano]
 hamer_root = "external/hamer"

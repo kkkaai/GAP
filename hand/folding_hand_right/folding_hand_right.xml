@@ -1,0 +1,195 @@
+<mujoco model="folding_hand_right">
+  <default>
+    <joint limited="true" damping="1" armature="0.0002" frictionloss="0.01" />
+    <geom solimp="0.9 0.95 0.001" solref="0.01 0.1" />
+    <motor ctrllimited="true" />
+    <equality solref="0.001 2" />
+    <default class="visualgeom">
+      <geom material="right_hand_material" condim="1" contype="0" conaffinity="0" />
+    </default>
+  </default>
+
+  <compiler angle="radian" meshdir="meshes" eulerseq="zyx" autolimits="true" />
+
+  <asset>
+    <material name="right_hand_material" rgba="0.792156862745098 0.819607843137255 0.933333333333333 1" />
+    <material name="default_material" rgba="0.7 0.7 0.7 1" />
+    <mesh name="base_link.STL" file="base_link.STL" />
+    <mesh name="ff_1.STL" file="ff_1.STL" />
+    <mesh name="ff_2.STL" file="ff_2.STL" />
+    <mesh name="ff_3.STL" file="ff_3.STL" />
+    <mesh name="mf_1.STL" file="mf_1.STL" />
+    <mesh name="mf_2.STL" file="mf_2.STL" />
+    <mesh name="rf_1.STL" file="rf_1.STL" />
+    <mesh name="rf_2.STL" file="rf_2.STL" />
+    <mesh name="rf_3.STL" file="rf_3.STL" />
+    <mesh name="lf_1.STL" file="lf_1.STL" />
+    <mesh name="lf_2.STL" file="lf_2.STL" />
+    <mesh name="lf_3.STL" file="lf_3.STL" />
+    <mesh name="th_1.STL" file="th_1.STL" />
+    <mesh name="th_2.STL" file="th_2.STL" />
+    <mesh name="th_3.STL" file="th_3.STL" />
+    <mesh name="th_4.STL" file="th_4.STL" />
+  </asset>
+
+  <worldbody>
+    <body name="base_link" pos="0 0 0" quat="1 0 0 0">
+        <inertial pos="0.00276118404102101 -0.00285774223692806 0.0615605479553047" quat="1.0 0.0 0.0 0.0" mass="0.103375780582453" diaginertia="3.11593509491742e-05 4.5003240518971e-05 3.85374175725486e-05" />
+        <geom name="base_link_visual_0" pos="0 0 0" quat="1.0 0.0 0.0 0.0" material="right_hand_material" type="mesh" mesh="base_link.STL" />
+        <body name="th_1" pos="-0.0079 -0.001045 0.064" quat="1.3492435731251315e-11 -3.6732051033217936e-06 0.9999999999865075 -3.6732051033217936e-06">
+          <joint name="th_1_joint" type="hinge" range="0 1.5708" axis="0 1 0" />
+          <inertial pos="0.0137524610845284 -0.00388692531484706 -0.00399815691934079" quat="1.0 0.0 0.0 0.0" mass="0.0085862447602651" diaginertia="4.86393167138675e-07 4.66658280466237e-07 5.71403929448824e-07" />
+          <geom name="th_1_visual_0" pos="0 0 0" quat="1.0 0.0 0.0 0.0" material="right_hand_material" type="mesh" mesh="th_1.STL" />
+          <body name="th_2" pos="0.01364 0.02189 -0.0017481" quat="0.6142010687513615 -0.6142033248420053 0.3503643967958696 0.3503656837585236">
+            <joint name="th_2_joint" type="hinge" range="0 1.22173" axis="0 1 0" />
+            <inertial pos="0.0127004115106669 0.000899925159810369 0.021103551602678" quat="1.0 0.0 0.0 0.0" mass="0.00484700233885311" diaginertia="7.68869476994104e-07 1.55377159306767e-06 1.02745220346099e-06" />
+            <geom name="th_2_visual_0" pos="0 0 0" quat="1.0 0.0 0.0 0.0" material="right_hand_material" type="mesh" mesh="th_2.STL" />
+            <body name="th_3" pos="0.036109 -0.0001 0.036072" quat="1.0 0.0 0.0 0.0">
+              <joint name="th_3_joint" type="hinge" range="0 3.1415926" axis="0 1 0" />
+              <inertial pos="0.00799399367852193 0.00100001344203523 0.0145817963066114" quat="1.0 0.0 0.0 0.0" mass="0.0036807341199548" diaginertia="2.80148855351827e-07 4.75376345730277e-07 3.64623294368966e-07" />
+              <geom name="th_3_visual_0" pos="0 0 0" quat="1.0 0.0 0.0 0.0" material="right_hand_material" type="mesh" mesh="th_3.STL" />
+              <body name="th_4" pos="0.025359 0.0001 0.024123" quat="1.0 0.0 0.0 0.0">
+                <joint name="th_4_joint" type="hinge" range="0 3.1415926" axis="0 1 0" />
+                <inertial pos="0.00729876168262759 0.00109078776438153 0.0100298513252921" quat="1.0 0.0 0.0 0.0" mass="0.00281885774752767" diaginertia="1.52207777642241e-07 1.90128277126092e-07 1.03333952624484e-07" />
+                <geom name="th_4_visual_0" pos="0 0 0" quat="1.0 0.0 0.0 0.0" material="right_hand_material" type="mesh" mesh="th_4.STL" />
+              </body>
+            </body>
+          </body>
+        </body>
+        <body name="ff_1" pos="-0.0079 0.003355 0.064" quat="1.3492435731251315e-11 -3.6732051033217936e-06 0.9999999999865075 -3.6732051033217936e-06">
+          <joint name="ff_1_joint" type="hinge" range="0 1.5708" axis="0 -1 0" />
+          <inertial pos="0.0174276113143449 -0.0025880306270465 -0.051026172322912" quat="1.0 0.0 0.0 0.0" mass="0.00800116450103895" diaginertia="6.16375907626336e-07 7.00497772286988e-07 2.41679032104396e-07" />
+          <geom name="ff_1_visual_0" pos="0 0 0" quat="1.0 0.0 0.0 0.0" material="right_hand_material" type="mesh" mesh="ff_1.STL" />
+          <body name="ff_2" pos="0.020121 -0.0025 -0.075996" quat="0.5072199822139389 -0.507221845340388 0.49267235871351633 0.49267416840346234">
+            <joint name="ff_2_joint" type="hinge" range="0 3.1415926" axis="0 -1 0" />
+            <inertial pos="0.0158422609179284 0.00109998639127984 -0.00505523801864458" quat="1.0 0.0 0.0 0.0" mass="0.00368074206825828" diaginertia="1.74635425164805e-07 4.75377212779051e-07 4.70138993869148e-07" />
+            <geom name="ff_2_visual_0" pos="0 0 0" quat="1.0 0.0 0.0 0.0" material="right_hand_material" type="mesh" mesh="ff_2.STL" />
+            <body name="ff_3" pos="0.035 0.0003 0" quat="1.0 0.0 0.0 0.0">
+              <joint name="ff_3_joint" type="hinge" range="0 3.1415926" axis="0 -1 0" />
+              <inertial pos="0.0178367732030435 0.000999402970096486 -0.0022372319913799" quat="1.0 0.0 0.0 0.0" mass="0.00404959762041178" diaginertia="9.09224979928097e-08 6.26639694894412e-07 6.23321071228333e-07" />
+              <geom name="ff_3_visual_0" pos="0 0 0" quat="1.0 0.0 0.0 0.0" material="right_hand_material" type="mesh" mesh="ff_3.STL" />
+            </body>
+          </body>
+        </body>
+        <body name="mf_1" pos="-0.009 0.000855 0.14055" quat="-0.4999999999966269 0.4999981633974483 0.5000018366025516 0.4999999999966269">
+          <joint name="mf_1_joint" type="hinge" range="0 3.1415926" axis="0 -1 0" />
+          <inertial pos="0.0158422601570955 0.00129998597816512 -0.0050552380419905" quat="1.0 0.0 0.0 0.0" mass="0.00368074201522147" diaginertia="1.74635406284412e-07 4.75377216872989e-07 4.70139016490944e-07" />
+          <geom name="mf_1_visual_0" pos="0 0 0" quat="1.0 0.0 0.0 0.0" material="right_hand_material" type="mesh" mesh="mf_1.STL" />
+          <body name="mf_2" pos="0.035 0.0006 0" quat="1.0 0.0 0.0 0.0">
+            <joint name="mf_2_joint" type="hinge" range="0 3.1415926" axis="0 -1 0" />
+            <inertial pos="0.0216169098719861 0.000904419663191184 -0.00217715663925655" quat="1.0 0.0 0.0 0.0" mass="0.00502242897630229" diaginertia="1.06662106139777e-07 9.59144418477493e-07 9.60297532986314e-07" />
+            <geom name="mf_2_visual_0" pos="0 0 0" quat="1.0 0.0 0.0 0.0" material="right_hand_material" type="mesh" mesh="mf_2.STL" />
+          </body>
+        </body>
+        <body name="rf_1" pos="-0.0079 0.012155 0.064" quat="1.3492435731251315e-11 -3.6732051033217936e-06 0.9999999999865075 -3.6732051033217936e-06">
+          <joint name="rf_1_joint" type="hinge" range="0 1.5708" axis="0 1 0" />
+          <inertial pos="-0.0159906401844529 -0.0105600115967382 -0.051516391608172" quat="1.0 0.0 0.0 0.0" mass="0.00800969565306044" diaginertia="6.31281723456019e-07 6.95805064467012e-07 2.40136855524572e-07" />
+          <geom name="rf_1_visual_0" pos="0 0 0" quat="1.0 0.0 0.0 0.0" material="right_hand_material" type="mesh" mesh="rf_1.STL" />
+          <body name="rf_2" pos="-0.0161 -0.0113 -0.07655" quat="-0.4999999999966269 0.4999981633974483 -0.5000018366025516 -0.4999999999966269">
+            <joint name="rf_2_joint" type="hinge" range="0 3.1415926" axis="0 -1 0" />
+            <inertial pos="0.0156935934157024 0.00109998713025121 -0.00549943217420239" quat="1.0 0.0 0.0 0.0" mass="0.0036807366322041" diaginertia="1.72904144168496e-07 4.75376819501147e-07 4.71869255601023e-07" />
+            <geom name="rf_2_visual_0" pos="0 0 0" quat="1.0 0.0 0.0 0.0" material="right_hand_material" type="mesh" mesh="rf_2.STL" />
+            <body name="rf_3" pos="0.034986 0.0004 -0.00098578" quat="1.0 0.0 0.0 0.0">
+              <joint name="rf_3_joint" type="hinge" range="0 3.1415926" axis="0 -1 0" />
+              <inertial pos="0.018265888885159 0.000904759770016556 -0.00370738520761145" quat="1.0 0.0 0.0 0.0" mass="0.00499342460902789" diaginertia="1.15277519199432e-07 7.52048559497963e-07 7.39864170899251e-07" />
+              <geom name="rf_3_visual_0" pos="0 0 0" quat="1.0 0.0 0.0 0.0" material="right_hand_material" type="mesh" mesh="rf_3.STL" />
+            </body>
+          </body>
+        </body>
+        <body name="lf_1" pos="-0.0079 0.016555 0.064" quat="1.3492435731251315e-11 -3.6732051033217936e-06 0.9999999999865075 -3.6732051033217936e-06">
+          <joint name="lf_1_joint" type="hinge" range="0 1.5708" axis="0 1 0" />
+          <inertial pos="-0.0312849510272932 -0.0140312936490971 -0.0502369136670625" quat="1.0 0.0 0.0 0.0" mass="0.00836089652615313" diaginertia="6.91312748704694e-07 9.37745860657525e-07 4.62303222321355e-07" />
+          <geom name="lf_1_visual_0" pos="0 0 0" quat="1.0 0.0 0.0 0.0" material="right_hand_material" type="mesh" mesh="lf_1.STL" />
+          <body name="lf_2" pos="-0.0329 -0.0157 -0.07655" quat="-0.4999999999966269 0.4999981633974483 -0.5000018366025516 -0.4999999999966269">
+            <joint name="lf_2_joint" type="hinge" range="0 3.1415926" axis="0 -1 0" />
+            <inertial pos="0.0155519171680911 0.000899988158834936 -0.00588816520024507" quat="1.0 0.0 0.0 0.0" mass="0.0036807319075368" diaginertia="1.71769313017517e-07 4.75376475908662e-07 4.73003192113371e-07" />
+            <geom name="lf_2_visual_0" pos="0 0 0" quat="1.0 0.0 0.0 0.0" material="right_hand_material" type="mesh" mesh="lf_2.STL" />
+            <body name="lf_3" pos="0.034951 -0.0001 -0.0018559" quat="1.0 0.0 0.0 0.0">
+              <joint name="lf_3_joint" type="hinge" range="0 3.1415926" axis="0 -1 0" />
+              <inertial pos="0.0136373816869327 0.000999137783326609 -0.00495198647252044" quat="1.0 0.0 0.0 0.0" mass="0.00323429827183613" diaginertia="9.71311360656645e-08 3.22738473259161e-07 2.95824799844708e-07" />
+              <geom name="lf_3_visual_0" pos="0 0 0" quat="1.0 0.0 0.0 0.0" material="right_hand_material" type="mesh" mesh="lf_3.STL" />
+            </body>
+          </body>
+        </body>
+    </body>
+  </worldbody>
+
+  <contact>
+    <exclude body1="base_link" body2="th_1" />
+    <exclude body1="base_link" body2="ff_1" />
+    <exclude body1="base_link" body2="mf_1" />
+    <exclude body1="base_link" body2="rf_1" />
+    <exclude body1="base_link" body2="lf_1" />
+
+    <exclude body1="base_link" body2="th_2" />
+    <exclude body1="base_link" body2="ff_2" />
+    <exclude body1="base_link" body2="mf_2" />
+    <exclude body1="base_link" body2="rf_2" />
+    <exclude body1="base_link" body2="lf_2" />
+
+    <exclude body1="th_1" body2="ff_1" />
+    <exclude body1="th_1" body2="mf_1" />
+    <exclude body1="th_1" body2="rf_1" />
+    <exclude body1="th_1" body2="lf_1" />
+    <exclude body1="ff_1" body2="mf_1" />
+    <exclude body1="ff_1" body2="rf_1" />
+    <exclude body1="ff_1" body2="lf_1" />
+    <exclude body1="mf_1" body2="rf_1" />
+    <exclude body1="mf_1" body2="lf_1" />
+    <exclude body1="rf_1" body2="lf_1" />
+
+    <exclude body1="th_1" body2="th_2" />
+    <exclude body1="th_2" body2="th_3" />
+    <exclude body1="th_3" body2="th_4" />
+    <exclude body1="ff_1" body2="ff_2" />
+    <exclude body1="ff_2" body2="ff_3" />
+    <exclude body1="mf_1" body2="mf_2" />
+    <exclude body1="rf_1" body2="rf_2" />
+    <exclude body1="rf_2" body2="rf_3" />
+    <exclude body1="lf_1" body2="lf_2" />
+    <exclude body1="lf_2" body2="lf_3" />
+  </contact>
+
+  <equality>
+    <joint name="rf_1_link" joint1="rf_1_joint" joint2="ff_1_joint" polycoef="0 1 0 0 0" />
+    <joint name="lf_1_link" joint1="lf_1_joint" joint2="ff_1_joint" polycoef="0 2 0 0 0" />
+  </equality>
+
+  <tendon>
+    <fixed name="th">
+      <joint joint="th_2_joint" coef="0.5" />
+      <joint joint="th_3_joint" coef="0.8" />
+      <joint joint="th_4_joint" coef="0.8" />
+    </fixed>
+    <fixed name="ff">
+      <joint joint="ff_2_joint" coef="1" />
+      <joint joint="ff_3_joint" coef="1" />
+    </fixed>
+    <fixed name="mf">
+      <joint joint="mf_1_joint" coef="1" />
+      <joint joint="mf_2_joint" coef="1" />
+    </fixed>
+    <fixed name="rf">
+      <joint joint="rf_2_joint" coef="1" />
+      <joint joint="rf_3_joint" coef="1" />
+    </fixed>
+    <fixed name="lf">
+      <joint joint="lf_2_joint" coef="1" />
+      <joint joint="lf_3_joint" coef="1" />
+    </fixed>
+  </tendon>
+
+  <actuator>
+    <position name="plam_th" joint="th_1_joint" kp="400" ctrlrange="0 1.5708" forcerange="-5 5" />
+    <position name="th" tendon="th" kp="400" ctrlrange="0 1" forcerange="-5 5" />
+
+    <position name="plam_other" joint="ff_1_joint" kp="400" ctrlrange="0 1.5708" forcerange="-5 5" />
+    <position name="ff" tendon="ff" kp="400" ctrlrange="0 3.1415926" forcerange="-5 5" />
+
+    <position name="mf" tendon="mf" kp="400" ctrlrange="0 3.1415926" forcerange="-5 5" />
+
+    <position name="rf" tendon="rf" kp="400" ctrlrange="0 3.1415926" forcerange="-5 5" />
+
+    <position name="lf" tendon="lf" kp="400" ctrlrange="0 3.1415926" forcerange="-5 5" />
+  </actuator>
+</mujoco>

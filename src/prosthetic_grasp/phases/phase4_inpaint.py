@@ -64,6 +64,7 @@ from prosthetic_grasp.common.image_editing import (
     paste_crop_back,
     run_masked_image_edit,
 )
+from prosthetic_grasp.common.prompts import DEFAULT_PHASE4_INTENTION, build_phase4_hand_generation_prompt
 from prosthetic_grasp.common.types import Phase4InpaintResult
 
 @dataclass
@@ -72,11 +73,9 @@ class Phase4InpaintConfig(ImageEditConfig):
     model_name: str = "flux-fill"
     model_id: str = FLUX_FILL_MODEL_ID
     stability_endpoint: str = STABILITY_INPAINT_ENDPOINT
-    prompt: str = (
-        "Generate a realistic healthy adult right hand in first-person view, naturally interacting with the "
-        "target object inside the masked region. Preserve the object identity and scene layout. Avoid extra "
-        "fingers, deformed anatomy, and changes outside the masked region."
-    )
+    preserve_unmasked_pixels: bool = False
+    intention: str = DEFAULT_PHASE4_INTENTION
+    prompt: str = ""
 
 class Phase4Inpaint:
     """Use an image-edit model to generate the healthy human-hand interaction image."""
@@ -86,7 +85,10 @@ class Phase4Inpaint:
 
     def run(self, image_rgb: np.ndarray, lollipop_mask: np.ndarray) -> Phase4InpaintResult:
         rgb_crop, mask_crop, roi_box = crop_from_mask(image_rgb, lollipop_mask, self.config.pad_ratio)
-        inpaint_crop = run_masked_image_edit(self.config, rgb_crop, mask_crop)
+        prompt = self.config.prompt or build_phase4_hand_generation_prompt(self.config.intention)
+        edit_config = Phase4InpaintConfig(**self.config.__dict__)
+        edit_config.prompt = prompt
+        inpaint_crop = run_masked_image_edit(edit_config, rgb_crop, mask_crop)
         inpaint_full = paste_crop_back(image_rgb, inpaint_crop, roi_box)
         return Phase4InpaintResult(
             roi_box=roi_box,
@@ -96,5 +98,5 @@ class Phase4Inpaint:
             inpaint_full=inpaint_full,
             mode=self.config.mode,
             model_name=self.config.model_name,
-            prompt=self.config.prompt,
+            prompt=prompt,
         )

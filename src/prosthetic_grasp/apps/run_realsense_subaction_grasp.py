@@ -22,6 +22,7 @@ def build_argparser() -> argparse.ArgumentParser:
     parser.add_argument("--width", type=int, default=640, help="RGB stream width.")
     parser.add_argument("--height", type=int, default=480, help="RGB stream height.")
     parser.add_argument("--fps", type=int, default=30, help="RGB stream FPS.")
+    parser.add_argument("--task", default=None, help="Optional user task instruction for phase4_intention.")
     return parser
 
 
@@ -91,7 +92,7 @@ def main() -> None:
                     depth_path=None,
                 )
                 print(f"Captured frame -> {capture_dir}")
-                result = pipeline.run(frame=frame)
+                result = pipeline.run(frame=frame, task_instruction=args.task)
                 artifact_dir = save_pipeline_artifacts(result, capture_dir)
                 print(f"Pipeline status: {result.status}")
                 print(f"Artifacts saved to: {artifact_dir}")

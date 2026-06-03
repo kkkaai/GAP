@@ -46,6 +46,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--mano-root", default="models", help="Root containing mano/MANO_RIGHT.pkl.")
     parser.add_argument("--robot-profile", default="shadow_hand")
     parser.add_argument("--output-dir", default="outputs/phase6_random_mano")
+    parser.add_argument("--pose", choices=["zero", "random"], default="random")
     parser.add_argument("--seed", type=int, default=7)
     parser.add_argument("--pose-scale", type=float, default=0.45)
     parser.add_argument("--restarts", type=int, default=8)
@@ -71,7 +72,12 @@ def make_mano_21_joints(vertices: np.ndarray, joints16: np.ndarray) -> np.ndarra
     return joints21
 
 
-def create_random_phase5_result(mano_root: str, seed: int, pose_scale: float) -> tuple[Phase5ManoResult, np.ndarray]:
+def create_phase5_result(
+    mano_root: str,
+    pose: str,
+    seed: int,
+    pose_scale: float,
+) -> tuple[Phase5ManoResult, np.ndarray]:
     torch.manual_seed(seed)
     generator = torch.Generator().manual_seed(seed)
     model = smplx.create(
@@ -83,8 +89,11 @@ def create_random_phase5_result(mano_root: str, seed: int, pose_scale: float) ->
         batch_size=1,
     )
 
-    hand_pose = torch.randn(1, 45, generator=generator) * pose_scale
-    hand_pose[:, 2::3] = hand_pose[:, 2::3].abs()
+    if pose == "zero":
+        hand_pose = torch.zeros(1, 45)
+    else:
+        hand_pose = torch.randn(1, 45, generator=generator) * pose_scale
+        hand_pose[:, 2::3] = hand_pose[:, 2::3].abs()
     output = model(
         betas=torch.zeros(1, 10),
         global_orient=torch.zeros(1, 3),
@@ -118,11 +127,15 @@ def create_random_phase5_result(mano_root: str, seed: int, pose_scale: float) ->
     )
     phase5 = Phase5ManoResult(
         status="ok",
-        message="Synthetic random MANO hand for Phase6 testing.",
+        message=f"Synthetic {pose} MANO hand for Phase6 testing.",
         faces=np.asarray(model.faces, dtype=np.int64),
         hands=[hand],
     )
     return phase5, vertices
+
+
+def create_random_phase5_result(mano_root: str, seed: int, pose_scale: float) -> tuple[Phase5ManoResult, np.ndarray]:
+    return create_phase5_result(mano_root, "random", seed, pose_scale)
 
 
 def robot_mesh(phase6: Phase6ProstheticAction, action: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
@@ -281,7 +294,7 @@ def main() -> None:
     output_dir = Path(args.output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    phase5_result, mano_vertices = create_random_phase5_result(args.mano_root, args.seed, args.pose_scale)
+    phase5_result, mano_vertices = create_phase5_result(args.mano_root, args.pose, args.seed, args.pose_scale)
     config = Phase6ProstheticActionConfig(
         robot_profile=args.robot_profile,
         tip_point="mesh_tip",
@@ -299,7 +312,7 @@ def main() -> None:
     mano_vertices_robot = map_mano_points_like_phase6(phase6, hand, mano_vertices)
     mano_joints_robot = map_mano_points_like_phase6(phase6, hand, hand.keypoints_3d)
     robot_vertices, robot_faces = robot_mesh(phase6, result.action)
-    output_html = output_dir / f"random_mano_{args.robot_profile}_phase6_overlay.html"
+    output_html = output_dir / f"{args.pose}_mano_{args.robot_profile}_phase6_overlay.html"
     write_visualization(
         output_html,
         mano_vertices_robot,
@@ -315,6 +328,7 @@ def main() -> None:
     summary = {
         "source": "src/prosthetic_grasp/phases/phase6_prosthetic_action.py",
         "robot_profile": args.robot_profile,
+        "pose": args.pose,
         "seed": args.seed,
         "pose_scale": args.pose_scale,
         "status": result.status,
@@ -328,11 +342,12 @@ def main() -> None:
         "metadata": result.metadata,
         "output_html": str(output_html),
     }
-    summary_path = output_dir / f"random_mano_{args.robot_profile}_phase6_summary.json"
+    summary_path = output_dir / f"{args.pose}_mano_{args.robot_profile}_phase6_summary.json"
     summary_path.write_text(json.dumps(summary, indent=2), encoding="utf-8")
 
     print("Retarget source: src/prosthetic_grasp/phases/phase6_prosthetic_action.py")
     print(f"Robot profile: {args.robot_profile}")
+    print(f"MANO pose: {args.pose}")
     for name, err in zip(FINGER_NAMES, result.fingertip_error):
         print(f"{name:>6}: {err * 1000.0:8.3f} mm")
     print(f"  mean: {np.mean(result.fingertip_error) * 1000.0:8.3f} mm")

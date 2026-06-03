@@ -66,6 +66,18 @@ class Phase4InpaintResult:
 
 
 @dataclass
+class Phase4IntentionResult:
+    target_object: str
+    daily_task: str
+    grasp_type: str
+    phase4_intention: str
+    model_id: str
+    prompt: str
+    raw_response: str
+    parsed_json: dict[str, Any]
+
+
+@dataclass
 class PhasePlaceholderResult:
     status: str
     message: str
@@ -117,6 +129,7 @@ class PipelineResult:
     phase1_mask: Phase1MaskResult | None = None
     phase2_lollipop: Phase2LollipopResult | None = None
     phase3_erase: Phase3EraseResult | None = None
+    phase4_intention: Phase4IntentionResult | None = None
     phase4_inpaint: Phase4InpaintResult | None = None
     phase5_mano: Phase5ManoResult | PhasePlaceholderResult | None = None
     phase6_prosthetic_action: Phase6ProstheticActionResult | PhasePlaceholderResult | None = None

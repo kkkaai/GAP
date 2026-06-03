@@ -61,6 +61,19 @@ _ROBOT_PROFILES: dict[str, dict[str, Any]] = {
             "lf_dip": (0.0, float(np.pi)),
         },
     },
+    "folding_hand_right": {
+        "xml_path": "hand/folding_hand_right/folding_hand_right.xml",
+        "model_format": "xml",
+        "wrist_link": "base_link",
+        "fingertip_links": [
+            "th_4",
+            "ff_3",
+            "mf_2",
+            "rf_3",
+            "lf_3",
+        ],
+        "tip_point": "mesh_tip",
+    },
     "inspire_hand": {
         "urdf_path": "hand/inspire_hand_ftp/urdf/inspire_right.urdf",
         "wrist_link": "right_base_link",
@@ -397,6 +410,7 @@ class _MjcfHandKinematics:
         self.joints: dict[str, _MjcfJoint] = {}
         self._parse_bodies()
         self.tendons = self._parse_fixed_tendons()
+        self.equality_joints = self._parse_equality_joints()
         self.actuators = self._parse_actuators()
 
         if self.wrist_link not in self.bodies:
@@ -540,6 +554,17 @@ class _MjcfHandKinematics:
             tendons[name] = joints
         return tendons
 
+    def _parse_equality_joints(self) -> list[tuple[str, str, np.ndarray]]:
+        equalities = []
+        for joint in self.root.findall("./equality/joint"):
+            joint1 = joint.get("joint1")
+            joint2 = joint.get("joint2")
+            if not joint1 or not joint2:
+                continue
+            coeffs = _parse_vec(joint.get("polycoef"), (0.0, 1.0, 0.0, 0.0, 0.0))
+            equalities.append((joint1, joint2, coeffs))
+        return equalities
+
     def _parse_actuators(self) -> list[_MjcfActuator]:
         actuators = []
         for position in self.root.findall("./actuator/position"):
@@ -577,6 +602,9 @@ class _MjcfHandKinematics:
         else:
             for name, value in zip(self.joint_names, action):
                 joint_values[name] = float(value)
+        for joint1, joint2, coeffs in self.equality_joints:
+            value = joint_values.get(joint2, 0.0)
+            joint_values[joint1] = float(sum(coeff * (value ** power) for power, coeff in enumerate(coeffs)))
         return joint_values
 
     def _body_transforms(self, joint_values: dict[str, float]) -> dict[str, np.ndarray]:

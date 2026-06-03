@@ -64,6 +64,7 @@ from prosthetic_grasp.common.image_editing import (
     paste_crop_back,
     run_masked_image_edit,
 )
+from prosthetic_grasp.common.prompts import PHASE3_ERASE_PROMPT
 from prosthetic_grasp.common.types import Phase3EraseResult
 
 @dataclass
@@ -72,11 +73,8 @@ class Phase3EraseConfig(ImageEditConfig):
     model_name: str = "flux-fill"
     model_id: str = FLUX_FILL_MODEL_ID
     stability_endpoint: str = STABILITY_ERASE_ENDPOINT
-    prompt: str = (
-        "Remove the current hand or prosthetic hand from the masked region and complete the hidden background "
-        "and object appearance naturally. Do not add any human hand. Preserve scene layout, object identity, "
-        "and content outside the masked region."
-    )
+    preserve_unmasked_pixels: bool = True
+    prompt: str = PHASE3_ERASE_PROMPT
 
 class Phase3Erase:
     """Use an image-edit model to erase the current hand and complete the occluded background."""

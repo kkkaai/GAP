@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from dataclasses import asdict
 from pathlib import Path
 
 import numpy as np
@@ -22,6 +23,12 @@ def save_pipeline_artifacts(result: PipelineResult, output_dir: str | Path) -> P
         save_mask(output_path / "phase3_mask_crop.png", result.phase3_erase.mask_crop)
         save_image(output_path / "phase3_erase_crop.png", result.phase3_erase.erased_crop)
         save_image(output_path / "phase3_erase_full.png", result.phase3_erase.erased_full)
+    if result.phase4_intention is not None:
+        save_json(output_path / "phase4_intention.json", asdict(result.phase4_intention))
+        (output_path / "phase4_intention.txt").write_text(
+            result.phase4_intention.phase4_intention,
+            encoding="utf-8",
+        )
     if result.phase4_inpaint is not None:
         save_image(output_path / "phase4_rgb_crop.png", result.phase4_inpaint.rgb_crop)
         save_mask(output_path / "phase4_mask_crop.png", result.phase4_inpaint.mask_crop)

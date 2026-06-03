@@ -93,6 +93,7 @@ def build_argparser() -> argparse.ArgumentParser:
         default=None,
         help="Override phase5_mano.body_detector. Use regnety for the smaller/faster detector.",
     )
+    parser.add_argument("--task", default=None, help="Optional user task instruction for phase4_intention.")
     return parser
 
 def main() -> None:
@@ -120,7 +121,7 @@ def main() -> None:
     frame = SensorFrame(rgb=rgb, depth=depth, rgb_path=args.rgb, depth_path=args.depth)
 
     pipeline = ProstheticGraspPipeline(settings)
-    result = pipeline.run(frame=frame)
+    result = pipeline.run(frame=frame, task_instruction=args.task)
     output_dir = save_pipeline_artifacts(result, args.output_dir)
 
     print(f"Pipeline status: {result.status}")

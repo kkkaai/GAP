@@ -14,6 +14,8 @@ class Phase2LollipopConfig:
     min_direction_norm_px: float = 1.0
     line_length_scale: float = 2.0
     min_iou: float = 0.5
+    palm_radius_scale: float = 1.1
+    strip_width_scale: float = 1.1
 
     def __post_init__(self) -> None:
         if self.min_mask_points <= 0:
@@ -21,6 +23,8 @@ class Phase2LollipopConfig:
         for name, value in {
             "min_direction_norm_px": self.min_direction_norm_px,
             "line_length_scale": self.line_length_scale,
+            "palm_radius_scale": self.palm_radius_scale,
+            "strip_width_scale": self.strip_width_scale,
         }.items():
             if value <= 0:
                 raise ValueError(f"{name} must be positive, got {value}.")
@@ -90,7 +94,7 @@ def _render_lollipop(mask: np.ndarray, params, config: Phase2LollipopConfig):
     x, y, size, dir_x, dir_y = params
     canvas_image = Image.new("L", (w, h), 0)
     draw = ImageDraw.Draw(canvas_image)
-    palm_radius = int(round(size))
+    palm_radius = int(round(size * config.palm_radius_scale))
     cx = int(round(x))
     cy = int(round(y))
     draw.ellipse((cx - palm_radius, cy - palm_radius, cx + palm_radius, cy + palm_radius), fill=255)
@@ -99,7 +103,7 @@ def _render_lollipop(mask: np.ndarray, params, config: Phase2LollipopConfig):
     direction = direction / max(float(np.linalg.norm(direction)), 1e-6)
     p_start = np.array([x, y], dtype=np.float32)
     p_end = p_start + direction * (config.line_length_scale * h)
-    strip_half_width = int(round(max(size / 2.0, 1.0)))
+    strip_half_width = int(round(max((size / 2.0) * config.strip_width_scale, 1.0)))
     orth = np.array([-direction[1], direction[0]], dtype=np.float32)
     p1 = p_start + orth * strip_half_width
     p2 = p_start - orth * strip_half_width

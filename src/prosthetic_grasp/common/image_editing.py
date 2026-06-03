@@ -17,6 +17,7 @@ STABILITY_SDXL_MODEL_ID = "stable-diffusion-xl-1024-v1-0"
 STABILITY_ERASE_ENDPOINT = "https://api.stability.ai/v2beta/stable-image/edit/erase"
 STABILITY_INPAINT_ENDPOINT = "https://api.stability.ai/v2beta/stable-image/edit/inpaint"
 STABILITY_LEGACY_INPAINT_MODEL_NAME = "stable-diffusion-3.5-large-turbo"
+ZENMUX_BASE_URL = "https://zenmux.ai/api/v1"
 
 
 @dataclass
@@ -28,10 +29,11 @@ class ImageEditConfig:
     guidance_scale: float = 30.0
     num_inference_steps: int = 50
     pad_ratio: float = 0.25
-    preserve_unmasked_pixels: bool = True
+    preserve_unmasked_pixels: bool = False
     openai_model: str = "gpt-image-1"
     stability_endpoint: str = ""
     stability_output_format: str = "png"
+    zenmux_base_url: str = ZENMUX_BASE_URL
 
     def __post_init__(self) -> None:
         self.mode = self.mode.strip().lower()
@@ -56,6 +58,7 @@ class ImageEditConfig:
                 "gpt-image-1",
                 "stability-erase",
                 "stability-inpaint",
+                "zenmux",
                 STABILITY_LEGACY_INPAINT_MODEL_NAME,
             }
             if self.model_name not in supported_api_models:
@@ -68,6 +71,8 @@ class ImageEditConfig:
                 raise ValueError(
                     f"stability_output_format must be 'png', 'jpeg', or 'webp', got {self.stability_output_format!r}."
                 )
+            if self.model_name == "zenmux" and not self.model_id:
+                raise ValueError("ZenMux image editing requires model_id, for example 'openai/gpt-image-2'.")
             return
         raise ValueError(f"Unsupported image-edit mode: {self.mode!r}.")
 
@@ -213,6 +218,13 @@ def _decode_stability_error(response) -> str:
         return response.text
 
 
+def _decode_response_error(response) -> str:
+    try:
+        return str(response.json())
+    except ValueError:
+        return response.text
+
+
 def _raise_for_stability_error(response, operation: str) -> None:
     if response.ok:
         return
@@ -324,6 +336,115 @@ def _run_openai_image_edit_api(config: ImageEditConfig, image_rgb: np.ndarray, m
     return _decode_api_image(response.json())
 
 
+def _run_zenmux_image_edit_api(config: ImageEditConfig, image_rgb: np.ndarray, mask: np.ndarray) -> np.ndarray:
+    import requests
+
+    if "/" in config.model_id and not config.model_id.startswith("openai/"):
+        return _run_zenmux_vertex_image_edit_api(config, image_rgb, mask)
+
+    api_key = get_secret("ZENMUX_API_KEY", required=True)
+    base_url = get_secret("ZENMUX_BASE_URL") or config.zenmux_base_url or ZENMUX_BASE_URL
+    url = base_url.rstrip("/") + "/images/edits"
+    data = {
+        "model": config.model_id,
+        "prompt": config.prompt,
+        "n": "1",
+        "output_format": config.stability_output_format,
+    }
+    headers = {"Authorization": f"Bearer {api_key}"}
+
+    def post_with_image_field(field_name: str):
+        files = {
+            field_name: ("image.png", _array_to_png_bytes(image_rgb), "image/png"),
+            "mask": ("mask.png", _openai_mask_to_png_bytes(mask), "image/png"),
+        }
+        return requests.post(url, headers=headers, files=files, data=data, timeout=600)
+
+    response = post_with_image_field("image")
+    if not response.ok and response.status_code in {400, 422}:
+        response = post_with_image_field("image[]")
+    if not response.ok:
+        raise RuntimeError(
+            f"ZenMux image edit API failed for model {config.model_id!r} with HTTP "
+            f"{response.status_code}: {_decode_response_error(response)}"
+        )
+    return _decode_api_image(response.json())
+
+
+def _decode_vertex_image(payload: dict) -> np.ndarray:
+    predictions = payload.get("predictions") or []
+    if not predictions:
+        raise RuntimeError(f"Vertex image API returned no predictions: {payload}")
+    item = predictions[0]
+    if "bytesBase64Encoded" in item:
+        image_bytes = base64.b64decode(item["bytesBase64Encoded"])
+        return np.array(Image.open(io.BytesIO(image_bytes)).convert("RGB"))
+    if "image" in item and isinstance(item["image"], dict) and "bytesBase64Encoded" in item["image"]:
+        image_bytes = base64.b64decode(item["image"]["bytesBase64Encoded"])
+        return np.array(Image.open(io.BytesIO(image_bytes)).convert("RGB"))
+    if "gcsUri" in item:
+        raise RuntimeError(f"Vertex image API returned gcsUri instead of image bytes: {item['gcsUri']}")
+    raise RuntimeError(f"Unsupported Vertex image API response payload: {payload}")
+
+
+def _run_zenmux_vertex_image_edit_api(config: ImageEditConfig, image_rgb: np.ndarray, mask: np.ndarray) -> np.ndarray:
+    import requests
+
+    api_key = get_secret("ZENMUX_API_KEY", required=True)
+    provider, model = config.model_id.split("/", 1)
+    url = f"https://zenmux.ai/api/vertex-ai/v1/publishers/{provider}/models/{model}:predict"
+    raw_image_b64 = base64.b64encode(_array_to_png_bytes(image_rgb)).decode("utf-8")
+    mask_b64 = base64.b64encode(_openai_mask_to_png_bytes(mask)).decode("utf-8")
+    payload = {
+        "instances": [
+            {
+                "prompt": config.prompt,
+                "referenceImages": [
+                    {
+                        "referenceType": "REFERENCE_TYPE_RAW",
+                        "referenceId": 1,
+                        "referenceImage": {
+                            "bytesBase64Encoded": raw_image_b64,
+                            "mimeType": "image/png",
+                        },
+                    },
+                    {
+                        "referenceType": "REFERENCE_TYPE_MASK",
+                        "referenceId": 2,
+                        "referenceImage": {
+                            "bytesBase64Encoded": mask_b64,
+                            "mimeType": "image/png",
+                        },
+                        "maskImageConfig": {
+                            "maskMode": "MASK_MODE_USER_PROVIDED",
+                            "dilation": 0,
+                        },
+                    },
+                ],
+            }
+        ],
+        "parameters": {
+            "sampleCount": 1,
+            "outputOptions": {
+                "mimeType": "image/png",
+            },
+            "addWatermark": False,
+        },
+    }
+    response = requests.post(
+        url,
+        headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"},
+        json=payload,
+        timeout=600,
+    )
+    if not response.ok:
+        raise RuntimeError(
+            f"ZenMux Vertex image edit API failed for model {config.model_id!r} with HTTP "
+            f"{response.status_code}: {_decode_response_error(response)}"
+        )
+    return _decode_vertex_image(response.json())
+
+
 def _stability_headers(api_key: str) -> dict[str, str]:
     return {
         "Authorization": f"Bearer {api_key}",
@@ -394,6 +515,8 @@ def run_masked_image_edit(config: ImageEditConfig, image_rgb: np.ndarray, mask: 
             edited = _run_bfl_flux_fill_api(config, image_rgb, mask)
         elif model_name in {"gpt", "openai", "gpt-image-1"}:
             edited = _run_openai_image_edit_api(config, image_rgb, mask)
+        elif model_name == "zenmux":
+            edited = _run_zenmux_image_edit_api(config, image_rgb, mask)
         elif model_name == "stability-erase":
             edited = _run_stability_erase_api(config, image_rgb, mask)
         elif model_name in {"stability-inpaint", STABILITY_LEGACY_INPAINT_MODEL_NAME}:
