@@ -1,0 +1,15 @@
+# GAP SegFormer distillation dependencies
+# Install torch/torchvision with the CUDA build that matches your machine if needed.
+#
+# Example:
+#   pip install -r requirements/segformer-distill-stage.txt
+
+torch
+torchvision
+transformers
+accelerate
+safetensors
+numpy
+Pillow
+tqdm
+opencv-python

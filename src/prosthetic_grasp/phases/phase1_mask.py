@@ -210,8 +210,14 @@ class Phase1MaskConfig:
     support_mask_path: str | None = None
     support_image_paths: list[str] | None = None
     support_mask_paths: list[str] | None = None
+    support_mask_threshold: int = 127
     threshold: float = 0.5
     device: str = "auto"
+    segformer_checkpoint: str = ""
+    segformer_model_name: str = "nvidia/segformer-b0-finetuned-ade-512-512"
+    segformer_img_size: int = 448
+    segformer_threshold: float = 0.5
+    segformer_local_files_only: bool = False
 
     def __post_init__(self) -> None:
         self.mode = self.mode.strip().lower()
@@ -221,6 +227,14 @@ class Phase1MaskConfig:
             raise ValueError(f"text_threshold must be in [0, 1], got {self.text_threshold}.")
         if not 0.0 <= self.threshold <= 1.0:
             raise ValueError(f"threshold must be in [0, 1], got {self.threshold}.")
+        if not 0 <= self.support_mask_threshold <= 255:
+            raise ValueError(
+                f"support_mask_threshold must be in [0, 255], got {self.support_mask_threshold}."
+            )
+        if not 0.0 <= self.segformer_threshold <= 1.0:
+            raise ValueError(f"segformer_threshold must be in [0, 1], got {self.segformer_threshold}.")
+        if self.segformer_img_size <= 0:
+            raise ValueError(f"segformer_img_size must be positive, got {self.segformer_img_size}.")
 
 class Phase1Mask:
     """Phase 1 mask extraction.
@@ -234,15 +248,19 @@ class Phase1Mask:
         self._processor = None
         self._model = None
         self._device = None
+        self._segformer_model = None
+        self._segformer_device = None
 
     def run(self, image_rgb: np.ndarray) -> Phase1MaskResult:
         if self.config.mode == "precomputed":
             return self._run_precomputed(image_rgb)
         if self.config.mode == "seggpt":
             return self._run_seggpt(image_rgb)
+        if self.config.mode == "segformer":
+            return self._run_segformer(image_rgb)
         raise NotImplementedError(
             f"Unsupported phase1_mask mode: {self.config.mode!r}. "
-            "Use mode='precomputed' or mode='seggpt'."
+            "Use mode='precomputed', mode='seggpt', or mode='segformer'."
         )
 
     def _run_precomputed(self, image_rgb: np.ndarray) -> Phase1MaskResult:
@@ -325,16 +343,41 @@ class Phase1Mask:
         self._device = device
         return processor, model, device
 
+    def _ensure_segformer(self):
+        if self._segformer_model is not None:
+            return self._segformer_model, self._segformer_device
+        if not self.config.segformer_checkpoint:
+            raise ValueError("phase1_mask mode='segformer' requires segformer_checkpoint.")
+
+        import torch
+
+        from prosthetic_grasp.common.segformer_distill import load_segformer_checkpoint, load_segformer_model
+
+        if self.config.device == "auto":
+            device = "cuda" if torch.cuda.is_available() else "cpu"
+        else:
+            device = self.config.device
+        model = load_segformer_model(
+            model_name=self.config.segformer_model_name,
+            num_labels=2,
+            local_files_only=self.config.segformer_local_files_only,
+            device=device,
+        )
+        load_segformer_checkpoint(model, self.config.segformer_checkpoint, device)
+        model.eval()
+        self._segformer_model = model
+        self._segformer_device = device
+        return model, device
+
     @staticmethod
     def _rgb_to_pil(image_rgb: np.ndarray) -> Image.Image:
         return Image.fromarray(image_rgb).convert("RGB")
 
-    @staticmethod
-    def _mask_to_label_map(mask_path: str) -> Image.Image:
+    def _mask_to_label_map(self, mask_path: str) -> Image.Image:
         mask = load_image(mask_path)
         if mask.ndim == 3:
             mask = mask[..., 0]
-        label_map = (mask > 127).astype(np.uint8)
+        label_map = (mask > self.config.support_mask_threshold).astype(np.uint8)
         return Image.fromarray(label_map, mode="L")
 
     @staticmethod
@@ -390,6 +433,31 @@ class Phase1Mask:
                 "support_count": len(support_pairs),
                 "support_images": [image_path for image_path, _ in support_pairs],
                 "support_masks": [mask_path for _, mask_path in support_pairs],
+                "device": device,
+            },
+        )
+
+    def _run_segformer(self, image_rgb: np.ndarray) -> Phase1MaskResult:
+        from prosthetic_grasp.common.segformer_distill import predict_segformer_mask
+
+        model, device = self._ensure_segformer()
+        mask, prob = predict_segformer_mask(
+            model,
+            image_rgb,
+            img_size=self.config.segformer_img_size,
+            threshold=self.config.segformer_threshold,
+            device=device,
+        )
+        return Phase1MaskResult(
+            mask=mask,
+            metadata={
+                "source": "segformer",
+                "checkpoint": self.config.segformer_checkpoint,
+                "model_name": self.config.segformer_model_name,
+                "img_size": self.config.segformer_img_size,
+                "threshold": self.config.segformer_threshold,
+                "foreground_ratio": float(np.mean(mask)),
+                "prob_mean": float(np.mean(prob)),
                 "device": device,
             },
         )

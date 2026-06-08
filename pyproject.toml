@@ -36,6 +36,14 @@ seggpt = [
   "accelerate",
   "safetensors",
 ]
+segformer-distill = [
+  "torch",
+  "torchvision",
+  "transformers",
+  "accelerate",
+  "safetensors",
+  "opencv-python>=4.9",
+]
 retargeting = [
   "yourdfpy",
   "trimesh",
