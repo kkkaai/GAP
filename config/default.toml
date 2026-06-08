@@ -7,8 +7,14 @@ text_threshold = 0.25
 model_id = "external/models/seggpt-vit-large"
 support_image_path = ""
 support_mask_path = ""
+support_mask_threshold = 127
 threshold = 0.5
 device = "auto"
+segformer_checkpoint = ""
+segformer_model_name = "nvidia/segformer-b0-finetuned-ade-512-512"
+segformer_img_size = 448
+segformer_threshold = 0.5
+segformer_local_files_only = false
 
 [phase2_lollipop]
 min_mask_points = 10
