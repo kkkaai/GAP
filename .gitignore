@@ -31,3 +31,36 @@ outputs/
 dist/
 build/
 *.egg-info/
+
+# Local datasets and captures
+data/
+dataset/
+datasets/
+local_data/
+2026.* realsense/
+2026.* realsense.zip
+
+# Model weights and checkpoints
+weights/
+checkpoints/
+*.ckpt
+*.pt
+*.pth
+*.safetensors
+*.onnx
+*.engine
+*.bin
+
+# Local test cases and generated test artifacts
+testcase/
+testcases/
+test_data/
+test_outputs/
+
+# Local archives
+*.zip
+*.tar
+*.tar.gz
+*.tgz
+*.7z
+*.rar
