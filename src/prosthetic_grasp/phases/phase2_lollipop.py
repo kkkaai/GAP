@@ -88,8 +88,48 @@ def _intersect_ray_with_image_border(origin, direction, h, w):
     return np.array([x + t * dx, y + t * dy], dtype=np.float32)
 
 
-def _render_lollipop(mask: np.ndarray, params, config: Phase2LollipopConfig):
-    mask_shape = mask.shape
+def rotate_lollipop_params(params, angle_degrees: float):
+    """Rotate the lollipop direction around its circle center in image coordinates."""
+    x, y, size, dir_x, dir_y = params
+    theta = np.deg2rad(angle_degrees)
+    cos_t = float(np.cos(theta))
+    sin_t = float(np.sin(theta))
+    rotated_x = cos_t * dir_x - sin_t * dir_y
+    rotated_y = sin_t * dir_x + cos_t * dir_y
+    direction = np.array([rotated_x, rotated_y], dtype=np.float32)
+    direction = direction / max(float(np.linalg.norm(direction)), 1e-6)
+    return (float(x), float(y), float(size), float(direction[0]), float(direction[1]))
+
+
+def mirror_lollipop_params(params, axis: str = "horizontal"):
+    """Mirror the lollipop direction around its circle center."""
+    x, y, size, dir_x, dir_y = params
+    axis = axis.strip().lower()
+    if axis == "none":
+        mirrored_x = dir_x
+        mirrored_y = dir_y
+    elif axis == "horizontal":
+        mirrored_x = -dir_x
+        mirrored_y = dir_y
+    elif axis == "vertical":
+        mirrored_x = dir_x
+        mirrored_y = -dir_y
+    elif axis == "both":
+        mirrored_x = -dir_x
+        mirrored_y = -dir_y
+    else:
+        raise ValueError(f"Unsupported lollipop mirror axis: {axis!r}.")
+    direction = np.array([mirrored_x, mirrored_y], dtype=np.float32)
+    direction = direction / max(float(np.linalg.norm(direction)), 1e-6)
+    return (float(x), float(y), float(size), float(direction[0]), float(direction[1]))
+
+
+def render_lollipop_mask(
+    mask_shape: tuple[int, int],
+    params,
+    config: Phase2LollipopConfig | None = None,
+) -> np.ndarray:
+    config = config or Phase2LollipopConfig()
     h, w = mask_shape
     x, y, size, dir_x, dir_y = params
     canvas_image = Image.new("L", (w, h), 0)
@@ -111,7 +151,11 @@ def _render_lollipop(mask: np.ndarray, params, config: Phase2LollipopConfig):
     p4 = p_end + orth * strip_half_width
     poly = np.round(np.stack([p1, p2, p3, p4], axis=0)).astype(np.int32)
     draw.polygon([tuple(point) for point in poly], fill=255)
-    lollipop_mask = np.array(canvas_image) > 127
+    return np.array(canvas_image) > 127
+
+
+def _render_lollipop(mask: np.ndarray, params, config: Phase2LollipopConfig):
+    lollipop_mask = render_lollipop_mask(mask.shape, params, config)
     iou = float(np.logical_and(lollipop_mask, mask).sum() / np.logical_or(lollipop_mask, mask).sum())
     if iou < config.min_iou:
         raise ValueError(f"Lollipop IoU below threshold: {iou:.4f} < {config.min_iou:.4f}.")

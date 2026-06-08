@@ -41,6 +41,11 @@ from .contact_retargeting import (
     retarget_loss_terms,
     robot_tip_from_link,
 )
+from .mano_shadow_initialization import (
+    ManoShadowInitialization,
+    action_summary,
+    mano_pose_to_shadow_action,
+)
 from .robot_surface import (
     MjcfRobotSurfaceModel,
     RobotSurfaceSamples,
@@ -62,6 +67,7 @@ __all__ = [
     "ContactPatchTarget",
     "CandidateForceClosureScore",
     "ManoObjectContactResult",
+    "ManoShadowInitialization",
     "ManoSurfaceSamples",
     "ManoSurfaceTopology",
     "ManoToRobotFrameMapping",
@@ -82,8 +88,10 @@ __all__ = [
     "extract_mano_object_contact_clusters",
     "link_soft_surface_mapping",
     "load_robot_surface_model",
+    "action_summary",
     "mapping_result_to_json_dict",
     "map_canonical_mano_patches_to_robot_frame",
+    "mano_pose_to_shadow_action",
     "materialize_assigned_robot_contacts",
     "materialize_mesh_surface_samples",
     "materialize_mano_surface_samples",
