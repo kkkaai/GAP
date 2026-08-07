@@ -1,0 +1,14 @@
+name: gap-phase1-4
+channels:
+  - conda-forge
+dependencies:
+  - python=3.10
+  - pip
+  - numpy>=1.24
+  - pillow>=10
+  - scipy>=1.11
+  - matplotlib>=3.8
+  - opencv
+  - requests>=2.31
+  - python-dotenv>=1.0
+  - tqdm

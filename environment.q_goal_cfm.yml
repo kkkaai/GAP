@@ -1,0 +1,34 @@
+name: gap-q-goal-cfm
+channels:
+  - conda-forge
+dependencies:
+  - python=3.10
+  - pip
+  - numpy<2
+  - pillow
+  - tqdm
+  - pyyaml
+  - pandas
+  - scikit-learn
+  - matplotlib
+  - pip:
+      # PyTorch is intentionally installed from pip so the CUDA wheel can be
+      # selected consistently. For CPU-only machines, replace the three torch
+      # packages below with the CPU install command from pytorch.org.
+      - --extra-index-url https://download.pytorch.org/whl/cu126
+      - torch==2.7.0+cu126
+      - torchvision==0.22.0+cu126
+      - torchaudio==2.7.0+cu126
+      # Official Meta flow matching backend.
+      - flow_matching
+      # SigLIP image/text encoders and training utilities.
+      - transformers>=4.53
+      - accelerate>=1.8
+      - safetensors>=0.5
+      - tokenizers>=0.21
+      - huggingface_hub>=0.33
+      # Optional text embedding / experiment utilities.
+      - sentence-transformers>=4.1
+      - einops>=0.8
+      - tensorboard>=2.19
+      - rich>=14.0

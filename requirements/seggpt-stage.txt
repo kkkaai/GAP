@@ -1,0 +1,11 @@
+# GAP phase1 SegGPT dependencies
+# Install torch separately when you need a specific CUDA build.
+#
+# Recommended install flow:
+#   1) install torch/torchvision for your CUDA runtime if needed
+#   2) pip install -e .[seggpt]
+
+torch
+transformers
+accelerate
+safetensors

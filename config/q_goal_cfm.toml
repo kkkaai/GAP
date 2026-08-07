@@ -1,0 +1,33 @@
+# Draft q_goal CFM training configuration.
+# Dependencies are intentionally not added yet; confirm the encoder plan first.
+
+[data]
+train_jsonl = "data/q_goal/train.jsonl"
+val_jsonl = "data/q_goal/val.jsonl"
+quality_min = 0.0
+image_size = 224
+mask_size = 224
+
+[model]
+backend = "meta" # "meta" uses Meta flow_matching; "simple" uses the built-in linear CFM path.
+hidden_dim = 512
+depth = 4
+condition_dim = 512
+dropout = 0.0
+
+[condition]
+image_encoder = "siglip" # options: small_cnn, torchvision_resnet18, siglip, precomputed, none
+lollipop_mask_encoder = "small_cnn" # options: small_cnn, none
+task_encoder = "siglip" # options: embedding, siglip, precomputed, none
+siglip_model_id = "google/siglip-base-patch16-224"
+freeze_siglip = true
+use_lollipop_params = true
+use_q_current = true
+
+[training]
+batch_size = 64
+epochs = 100
+lr = 1e-4
+weight_decay = 1e-4
+num_workers = 4
+seed = 7

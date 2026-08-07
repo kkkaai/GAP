@@ -1,0 +1,14 @@
+# GAP notebook Step 5 dependencies
+#
+# This file is intended to be used INSIDE a cloned HaMeR repository,
+# because the official installation in the notebook is:
+#   pip install -e .[all]
+#   pip install -v -e third-party/ViTPose
+#
+# Usage:
+#   git clone --recursive https://github.com/geopavlakos/hamer.git
+#   cd hamer
+#   pip install -r /path/to/GAP/requirements/hamer-stage.txt
+
+-e .[all]
+-e third-party/ViTPose
