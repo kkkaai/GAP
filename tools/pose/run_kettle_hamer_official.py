@@ -79,6 +79,39 @@ def bbox_mask_overlap(box: np.ndarray, mask: np.ndarray) -> float:
     return float(np.count_nonzero(mask[y1 : y2 + 1, x1 : x2 + 1] > 0))
 
 
+def mask_from_bbox(image_shape: tuple[int, int], box: np.ndarray, pad: float = 0.15) -> np.ndarray:
+    h, w = image_shape
+    x1, y1, x2, y2 = [float(v) for v in box]
+    bw = max(1.0, x2 - x1)
+    bh = max(1.0, y2 - y1)
+    x1 = int(np.floor(max(0.0, x1 - bw * pad)))
+    y1 = int(np.floor(max(0.0, y1 - bh * pad)))
+    x2 = int(np.ceil(min(float(w - 1), x2 + bw * pad)))
+    y2 = int(np.ceil(min(float(h - 1), y2 + bh * pad)))
+    mask = np.zeros((h, w), dtype=np.uint8)
+    if x2 > x1 and y2 > y1:
+        mask[y1 : y2 + 1, x1 : x2 + 1] = 255
+    return mask
+
+
+def draw_keypoints_overlay(
+    image_bgr: np.ndarray,
+    keypoints: np.ndarray | None,
+    box: np.ndarray | None,
+) -> np.ndarray:
+    overlay = image_bgr.copy()
+    if box is not None:
+        x1, y1, x2, y2 = [int(round(float(v))) for v in box]
+        cv2.rectangle(overlay, (x1, y1), (x2, y2), (0, 255, 255), 2)
+    if keypoints is not None:
+        for x, y, score in keypoints:
+            if score <= 0:
+                continue
+            color = (0, 255, 0) if score > 0.5 else (0, 165, 255)
+            cv2.circle(overlay, (int(round(x)), int(round(y))), 3, color, -1)
+    return overlay
+
+
 def collect_cases(output_root: Path) -> list[dict[str, Path | str]]:
     cases: list[dict[str, Path | str]] = []
     for sample_id in SAMPLE_IDS:
@@ -168,7 +201,9 @@ def detect_hand_boxes(
                             "is_right": is_right,
                             "handedness": handedness,
                             "person_id": person_id,
+                            "keypoints_2d": keyp.astype(np.float32),
                             "valid_keypoints": int(np.count_nonzero(valid)),
+                            "mean_keypoint_score": float(keyp[valid, 2].mean()),
                             "mask_overlap": bbox_mask_overlap(box, mask),
                             "area": bbox_area(box),
                         }
@@ -188,6 +223,7 @@ def detect_hand_boxes(
         "person_bboxes": pred_bboxes,
         "person_scores": pred_scores,
         "hand_candidates": candidates,
+        "selected_hand_keypoints_2d": selected["keypoints_2d"],
         "selected_indices": [0],
     }
     return selected["bbox_xyxy"].reshape(1, 4).astype(np.float32), np.asarray([selected["is_right"]], dtype=np.float32), meta
@@ -196,7 +232,7 @@ def detect_hand_boxes(
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output-root", type=Path, default=REPO_ROOT / "outputs/0713test_phase1_4_vlm_qwen37_test")
-    parser.add_argument("--body-detector", choices=["vitdet", "regnety"], default="regnety")
+    parser.add_argument("--body-detector", choices=["vitdet", "regnety"], default="vitdet")
     parser.add_argument("--rescale-factor", type=float, default=2.0)
     parser.add_argument("--batch-size", type=int, default=4)
     parser.add_argument("--person-score-thresh", type=float, default=0.5)
@@ -205,6 +241,11 @@ def main() -> None:
     parser.add_argument("--fallback-to-lollipop", action="store_true")
     parser.add_argument("--fallback-mask-pad", type=float, default=0.05)
     parser.add_argument("--limit", type=int, default=0)
+    parser.add_argument(
+        "--download-models",
+        action="store_true",
+        help="Call HaMeR's download_models helper before loading checkpoints.",
+    )
     args = parser.parse_args()
 
     os.chdir(HAMER_DIR)
@@ -221,7 +262,8 @@ def main() -> None:
         cases = cases[: args.limit]
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-    download_models(CACHE_DIR_HAMER)
+    if args.download_models:
+        download_models(CACHE_DIR_HAMER)
     model, model_cfg = load_hamer(DEFAULT_CHECKPOINT)
     model = model.to(device).eval()
     detector = load_body_detector(args.body_detector)
@@ -333,6 +375,23 @@ def main() -> None:
             x1, y1, x2, y2 = [int(round(v)) for v in box]
             cv2.rectangle(bbox_overlay, (x1, y1), (x2, y2), (0, 255, 255), 2)
         cv2.imwrite(str(out_dir / "detected_hand_bbox_overlay.png"), bbox_overlay)
+        selected_keypoints = detect_meta.get("selected_hand_keypoints_2d")
+        if selected_keypoints is not None:
+            selected_keypoints = np.asarray(selected_keypoints, dtype=np.float32)
+            np.save(out_dir / "vitpose_selected_hand_keypoints_2d.npy", selected_keypoints)
+        if len(boxes):
+            bbox_mask = mask_from_bbox(mask.shape[:2], boxes[0], pad=0.15)
+            cv2.imwrite(str(out_dir / "official_hand_bbox_mask.png"), bbox_mask)
+            bbox_mask_overlay = img_cv2.copy()
+            bbox_mask_bool = bbox_mask > 0
+            bbox_mask_overlay[bbox_mask_bool] = (
+                0.65 * bbox_mask_overlay[bbox_mask_bool] + 0.35 * np.array([0, 255, 255])
+            ).astype(np.uint8)
+            cv2.imwrite(str(out_dir / "official_hand_bbox_mask_overlay.png"), bbox_mask_overlay)
+        cv2.imwrite(
+            str(out_dir / "vitpose_hand_keypoints_overlay.png"),
+            draw_keypoints_overlay(img_cv2, selected_keypoints, boxes[0] if len(boxes) else None),
+        )
 
         if all_verts and img_size is not None and scaled_focal_length is not None:
             cam_view = renderer.render_rgba_multiple(

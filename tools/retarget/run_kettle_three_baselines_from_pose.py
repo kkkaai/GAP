@@ -83,7 +83,20 @@ def as_jsonable(value: Any) -> Any:
     return value
 
 
-def collect_cases(output_root: Path, hamer_subdir: str, fallback_hamer_subdir: str) -> list[dict[str, Any]]:
+def _object_pose_for_case(lollipop_dir: Path, source: str) -> tuple[Path, str]:
+    if source == "hand_anchored_pointmap":
+        optimized = lollipop_dir / "phase5_5_hand_anchored_pointmap" / "object_in_camera_optimized.txt"
+        if optimized.exists():
+            return optimized, source
+    return lollipop_dir / "pose_foundationpose" / "object_in_camera.txt", "foundationpose"
+
+
+def collect_cases(
+    output_root: Path,
+    hamer_subdir: str,
+    fallback_hamer_subdir: str,
+    object_pose_source: str = "foundationpose",
+) -> list[dict[str, Any]]:
     cases: list[dict[str, Any]] = []
     for sample_id in SAMPLE_IDS:
         sample_dir = output_root / sample_id
@@ -97,7 +110,7 @@ def collect_cases(output_root: Path, hamer_subdir: str, fallback_hamer_subdir: s
             keypoints = hamer_dir / "hand_00_keypoints_camera.npy"
             vertices = hamer_dir / "hand_00_vertices_camera.npy"
             hand_mesh = hamer_dir / "hand_00_camera.obj"
-            pose = ldir / "pose_foundationpose" / "object_in_camera.txt"
+            pose, pose_source = _object_pose_for_case(ldir, object_pose_source)
             if rgb.exists() and keypoints.exists() and vertices.exists() and hand_mesh.exists() and pose.exists():
                 cases.append(
                     {
@@ -111,6 +124,7 @@ def collect_cases(output_root: Path, hamer_subdir: str, fallback_hamer_subdir: s
                         "hamer_dir": hamer_dir,
                         "hamer_subdir": hamer_dir.name,
                         "object_pose": pose,
+                        "object_pose_source": pose_source,
                     }
                 )
     return cases
@@ -644,6 +658,7 @@ def run_case(
         "input": {
             "rgb": case["rgb"],
             "object_pose": case["object_pose"],
+            "object_pose_source": case.get("object_pose_source", "foundationpose"),
             "hand_mesh": case["hand_mesh"],
             "keypoints": case["keypoints"],
             "hamer_dir": case.get("hamer_dir"),
@@ -772,6 +787,15 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--alignment-root", type=Path, default=None)
     parser.add_argument("--alignment-method", choices=["translation", "se3", "rgbd"], default="se3")
     parser.add_argument(
+        "--object-pose-source",
+        choices=["foundationpose", "hand_anchored_pointmap"],
+        default="foundationpose",
+        help=(
+            "Object pose used by retargeting. Use hand_anchored_pointmap to read "
+            "phase5_5_hand_anchored_pointmap/object_in_camera_optimized.txt when available."
+        ),
+    )
+    parser.add_argument(
         "--disable-phase55",
         action="store_true",
         help="Do not auto-use phase5.5 alignment; fall back to --hand-scene-alignment.",
@@ -793,7 +817,12 @@ def main() -> None:
     if args.disable_phase55:
         args.alignment_method = ""
 
-    cases = collect_cases(args.output_root, args.hamer_subdir, args.fallback_hamer_subdir)
+    cases = collect_cases(
+        args.output_root,
+        args.hamer_subdir,
+        args.fallback_hamer_subdir,
+        object_pose_source=args.object_pose_source,
+    )
     if args.limit > 0:
         cases = cases[: args.limit]
     if not cases:
