@@ -49,6 +49,10 @@ def as_jsonable(value: Any) -> Any:
     return value
 
 
+def first_existing(paths: list[Path]) -> Path:
+    return next((path for path in paths if path.exists()), paths[0])
+
+
 def collect_cases(output_root: Path, hamer_subdir: str, fallback_hamer_subdir: str) -> list[dict[str, Any]]:
     cases = []
     for sample_id in SAMPLE_IDS:
@@ -76,7 +80,15 @@ def collect_cases(output_root: Path, hamer_subdir: str, fallback_hamer_subdir: s
                         "hamer_subdir": hamer_dir.name,
                         "object_pose": pose,
                         "depth": REPO_ROOT / "0713test" / source_id / "depth_meters.npy",
-                        "hand_mask": ldir / "lollipop_mask.png",
+                        "hand_mask": first_existing(
+                            [
+                                ldir / "pose_hamer_official" / "sam3_1_text_hand" / "sam3_1_text_hand_mask.png",
+                                ldir / "pose_hamer_official" / "sam3_1_text_hand_mask.png",
+                                ldir / "pose_hamer_official" / "sam2_hand_mask.png",
+                                ldir / "pose_hamer_official" / "official_hand_bbox_mask.png",
+                                ldir / "lollipop_mask.png",
+                            ]
+                        ),
                     }
                 )
     return cases
